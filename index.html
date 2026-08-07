@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#FDF6E3">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥚</text></svg>">
 <title>Egg Empire — crack, separate, profit</title>
 <style>
   :root{
@@ -324,9 +325,9 @@ const UPGRADES = [
 const $ = id => document.getElementById(id);
 
 function fmt(n){
-  if (n >= 1e12) return (n/1e12).toFixed(2)+'T';
-  if (n >= 1e9)  return (n/1e9).toFixed(2)+'B';
-  if (n >= 1e6)  return (n/1e6).toFixed(2)+'M';
+  if (n >= 9.995e11) return (n/1e12).toFixed(2)+'T';
+  if (n >= 9.995e8)  return (n/1e9).toFixed(2)+'B';
+  if (n >= 9.995e5)  return (n/1e6).toFixed(2)+'M';
   if (n >= 1e4)  return (n/1e3).toFixed(1)+'k';
   if (n >= 100)  return Math.floor(n).toLocaleString();
   return (Math.round(n*10)/10).toString();
@@ -497,6 +498,7 @@ let lastAutoCrackDrop = 0, lastAutoSepDrop = 0, lastIncomeUpdate = 0;
 function tick(now){
   const dt = Math.min((now - last) / 1000, 1);
   last = now;
+  S.lastSeen = Date.now();
 
   S.cracked += autoCrack() * dt;
   const sep = Math.min(S.cracked, autoSep() * dt);
@@ -540,8 +542,28 @@ function toast(msg, ms = 5000){
 }
 
 function save(){
-  S.lastSeen = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch(e){}
+}
+
+function creditAway(){
+  const away = Math.min((Date.now() - S.lastSeen) / 1000, 8 * 3600);
+  if (away <= 30) return;
+  S.lastSeen = Date.now();
+  const eff = 0.5;
+  const crackedMade = autoCrack() * away * eff;
+  const processed = Math.min(S.cracked + crackedMade, autoSep() * away * eff);
+  S.cracked = S.cracked + crackedMade - processed;
+  const yAvail = S.yolk + processed, wAvail = S.white + processed;
+  const ySold = Math.min(yAvail, yolkRate() * away * eff);
+  const wSold = Math.min(wAvail, whiteRate() * away * eff);
+  S.yolk = yAvail - ySold; S.white = wAvail - wSold;
+  S.totalEggs += processed;
+  const gained = ySold * yolkPrice() + wSold * whitePrice();
+  if (gained >= 1){
+    S.money += gained;
+    const mins = Math.round(away / 60);
+    toast('🐔 Welcome back! Your crew earned ' + fmtMoney(gained) + ' while you were away (' + (mins >= 60 ? Math.round(mins/60) + 'h' : mins + 'min') + ').', 7000);
+  }
 }
 
 function load(){
@@ -552,25 +574,7 @@ function load(){
     const d = JSON.parse(raw);
     S = { ...S, ...d, lvl:{ ...S.lvl, ...d.lvl }, owned:{ ...S.owned, ...d.owned } };
   } catch(e){ return; }
-
-  const away = Math.min((Date.now() - S.lastSeen) / 1000, 8 * 3600);
-  if (away > 30){
-    const eff = 0.5;
-    const crackedMade = autoCrack() * away * eff;
-    const processed = Math.min(S.cracked + crackedMade, autoSep() * away * eff);
-    S.cracked = S.cracked + crackedMade - processed;
-    const yAvail = S.yolk + processed, wAvail = S.white + processed;
-    const ySold = Math.min(yAvail, yolkRate() * away * eff);
-    const wSold = Math.min(wAvail, whiteRate() * away * eff);
-    S.yolk = yAvail - ySold; S.white = wAvail - wSold;
-    S.totalEggs += processed;
-    const gained = ySold * yolkPrice() + wSold * whitePrice();
-    if (gained >= 1){
-      S.money += gained;
-      const mins = Math.round(away / 60);
-      toast('🐔 Welcome back! Your crew earned ' + fmtMoney(gained) + ' while you were away (' + (mins >= 60 ? Math.round(mins/60) + 'h' : mins + 'min') + ').', 7000);
-    }
-  }
+  creditAway();
 }
 
 $('resetBtn').addEventListener('click', () => {
@@ -579,11 +583,25 @@ $('resetBtn').addEventListener('click', () => {
   location.reload();
 });
 
+[$('eggArt'), $('sepArt')].forEach(el => {
+  el.setAttribute('tabindex', '0');
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      el.dispatchEvent(new MouseEvent('click'));
+    }
+  });
+});
+
 load();
 buildShop();
 render();
 setInterval(save, 5000);
-document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden){ save(); }
+  else { creditAway(); last = performance.now(); render(); }
+});
+window.addEventListener('pagehide', save);
 window.addEventListener('beforeunload', save);
 requestAnimationFrame(tick);
 </script>

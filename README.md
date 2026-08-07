@@ -6,7 +6,7 @@ Built as a single self-contained HTML file — no dependencies, no build step, n
 
 ## How to play
 
-Open `egg-empire.html` in any modern browser (double-clicking it is enough).
+Open `index.html` in any modern browser (double-clicking it is enough). Because it's named `index.html`, any static host or web server will also serve it automatically as the site's front page.
 
 The production line runs top to bottom:
 
@@ -40,7 +40,7 @@ The layout adapts to phones: a compact sticky header, a single-column production
 
 ## Development
 
-Everything lives in `egg-empire.html`:
+Everything lives in `index.html`:
 
 - **CSS** — cozy-farm theme variables at the top of the `<style>` block (`--cream`, `--yolk`, etc.), mobile styles in the `@media (max-width:700px)` block at the bottom of it.
 - **Game balance** — the `HIRES` and `UPGRADES` arrays near the top of the `<script>` define every purchasable item (base cost, cost multiplier, rates). The derived-stat helpers just below them (`yolkPrice`, `crackPerClick`, …) hold the pricing formulas.
@@ -53,6 +53,6 @@ To preview with live reloads during development, any static server works, e.g.:
 python -m http.server 8137
 ```
 
-then browse to `http://localhost:8137/egg-empire.html`. (`.claude/launch.json` is preconfigured to launch exactly that for Claude Code's browser preview.)
+then browse to `http://localhost:8137/`. (`.claude/launch.json` is preconfigured to launch exactly that for Claude Code's browser preview.)
 
 Save data lives under the `eggEmpireSave_v1` key — bump the key name if you make a breaking change to the save format.
