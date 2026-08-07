@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FDF6E3">
+<title>Egg Empire — crack, separate, profit</title>
+<style>
+  :root{
+    --cream:#FDF6E3; --cream-2:#FFF9EC; --card:#FFFDF7;
+    --brown:#5C4A2E; --brown-2:#8A6D3B; --tan:#E8D9B5; --tan-2:#F3EAD2;
+    --yolk:#FFC93C; --yolk-dark:#E0A400; --white-fill:#F4F1E8;
+    --green:#7BAE4E; --green-dark:#4F7A2B; --pink:#F4A9A3;
+    --radius:18px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:"Segoe UI", system-ui, sans-serif;
+    background:var(--cream); color:var(--brown);
+    background-image:radial-gradient(#f3ead2 1.5px, transparent 1.5px);
+    background-size:28px 28px;
+    user-select:none; -webkit-user-select:none; overflow-x:hidden;
+    touch-action:manipulation;
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    padding:14px 22px; background:var(--card); border-bottom:3px solid var(--tan);
+    position:sticky; top:0; z-index:10;
+  }
+  header h1{font-size:24px; letter-spacing:.5px;}
+  header h1 span{color:var(--yolk-dark);}
+  .money-box{display:flex; gap:14px; align-items:baseline;}
+  .money{font-size:28px; font-weight:700; color:var(--green-dark); font-variant-numeric:tabular-nums;
+    min-width:160px; text-align:right;}
+  .rate{font-size:14px; color:var(--brown-2); font-variant-numeric:tabular-nums;
+    min-width:110px; text-align:left;}
+  .stats{font-size:13px; color:var(--brown-2);}
+
+  main{display:flex; flex-wrap:wrap; gap:18px; padding:18px; max-width:1100px; margin:0 auto; align-items:flex-start;}
+  #playfield{flex:1 1 480px; min-width:320px; max-width:600px; margin:0 auto;
+    display:flex; flex-direction:column; align-items:center;}
+  #shop{flex:0 1 380px; min-width:300px;}
+
+  .station{
+    background:var(--card); border:3px solid var(--tan); border-radius:var(--radius);
+    padding:10px 14px 12px; text-align:center; position:relative; width:100%; max-width:420px;
+  }
+  .station h2{font-size:16px; margin-bottom:2px;}
+  .station .sub{font-size:12px; color:var(--brown-2); min-height:15px;}
+  .clicker{cursor:pointer; transition:transform .06s ease;}
+  .clicker:active{transform:scale(.94);}
+  .art{width:128px; height:128px; margin:2px auto; display:block; overflow:visible;}
+
+  .wobble{animation:wob .28s ease;}
+  @keyframes wob{
+    0%{transform:scale(1) rotate(0)} 30%{transform:scale(1.1,.92) rotate(-4deg)}
+    60%{transform:scale(.94,1.06) rotate(3deg)} 100%{transform:scale(1) rotate(0)}
+  }
+  .tilting{animation:tilt .45s ease;}
+  @keyframes tilt{
+    0%{transform:rotate(0)} 30%{transform:rotate(-8deg) translateY(3px)}
+    65%{transform:rotate(7deg) translateY(3px)} 100%{transform:rotate(0)}
+  }
+  .cracks{opacity:0; transition:opacity .1s;}
+  .cracking .cracks{opacity:1;}
+
+  .chute{
+    width:0; height:30px; border-left:3px dashed var(--tan); margin:2px auto;
+  }
+  #splitChute{width:340px; max-width:80%; height:44px; display:block; margin:2px auto;}
+
+  .queue-badge{
+    display:inline-block; background:var(--tan-2); border:2px solid var(--tan);
+    border-radius:20px; padding:2px 14px; font-size:14px; font-weight:700; margin-top:2px;
+    font-variant-numeric:tabular-nums;
+  }
+  .auto-tag{font-size:11px; color:var(--green-dark); margin-top:3px; min-height:14px;}
+
+  .tanks{display:flex; gap:14px; width:100%; max-width:460px; justify-content:center;}
+  .tank-card{
+    flex:1 1 0; background:var(--card); border:3px solid var(--tan);
+    border-radius:var(--radius); padding:12px; text-align:center; min-width:0;
+  }
+  .tank-card h3{font-size:14px; margin-bottom:8px; white-space:nowrap;}
+  .tank{
+    height:110px; width:84px; margin:0 auto; border:3px solid var(--tan);
+    border-radius:10px 10px 16px 16px; background:var(--cream-2);
+    position:relative; overflow:hidden;
+  }
+  .fill{position:absolute; bottom:0; left:0; right:0; transition:height .3s ease;}
+  .fill.yolk{background:var(--yolk);}
+  .fill.white{background:#fff; border-top:3px solid #ECE7DA;}
+  .tank-amt{font-size:17px; font-weight:700; margin-top:8px; font-variant-numeric:tabular-nums;}
+  .tank-meta{font-size:11.5px; color:var(--brown-2); margin-top:2px; font-variant-numeric:tabular-nums;}
+
+  .drop{position:fixed; z-index:30; pointer-events:none; width:20px; height:20px; border-radius:50%;
+    transform:translate(-50%,-50%); will-change:transform;}
+  .drop.mix{background:radial-gradient(circle at 50% 55%, #FFC93C 0 6px, #FFFDF7 7px);
+    border:2px solid #E2DCCB;}
+  .drop.yolkdrop{background:var(--yolk); border:2px solid var(--yolk-dark); width:17px; height:17px;
+    border-radius:50% 50% 55% 55%;}
+  .drop.whitedrop{background:#FFFDF7; border:2px solid #E2DCCB; width:17px; height:17px;
+    border-radius:50% 50% 55% 55%; opacity:.95;}
+  .shard{position:fixed; z-index:31; pointer-events:none; width:9px; height:9px;
+    background:#FFFDF7; border:2px solid var(--tan); border-radius:2px 60% 40% 50%;
+    transform:translate(-50%,-50%);}
+
+  #shop .panel{
+    background:var(--card); border:3px solid var(--tan); border-radius:var(--radius); padding:14px;
+  }
+  #shop h2{font-size:18px; margin-bottom:10px;}
+  #shopChev{display:none;}
+  .chev{display:inline-block; transition:transform .2s ease; font-size:12px; color:var(--brown-2);}
+  .afford-badge{
+    background:var(--green); color:#fff; border-radius:12px; font-size:12px;
+    padding:1px 9px; margin-left:6px; vertical-align:2px;
+  }
+  .shop-section{margin-bottom:14px;}
+  .shop-section h3{
+    font-size:13px; text-transform:uppercase; letter-spacing:1px;
+    color:var(--brown-2); margin-bottom:6px; border-bottom:2px dashed var(--tan); padding-bottom:3px;
+  }
+  .sec-toggle{display:flex; justify-content:space-between; align-items:center; cursor:pointer;}
+  .shop-section.collapsed .chev{transform:rotate(-90deg);}
+  .shop-section.collapsed > div{display:none;}
+  .shop-section.collapsed{margin-bottom:10px;}
+  .item{
+    display:flex; align-items:center; gap:10px; width:100%;
+    background:var(--cream-2); border:2px solid var(--tan); border-radius:12px;
+    padding:8px 10px; margin-bottom:6px; cursor:pointer; text-align:left;
+    font-family:inherit; color:inherit; transition:transform .08s ease, background .15s ease;
+  }
+  .item:hover:not(.locked){background:var(--tan-2); transform:translateX(2px);}
+  .item:active:not(.locked){transform:scale(.98);}
+  .item.locked{opacity:.45; cursor:default;}
+  .item .icon{font-size:24px; width:32px; text-align:center; flex-shrink:0;}
+  .item .info{flex:1; min-width:0;}
+  .item .name{font-size:14px; font-weight:700;}
+  .item .name .owned{color:var(--green-dark); font-weight:700;}
+  .item .desc{font-size:11.5px; color:var(--brown-2);}
+  .item .cost{font-size:13px; font-weight:700; color:var(--green-dark); white-space:nowrap; font-variant-numeric:tabular-nums;}
+
+  .floaty{
+    position:absolute; font-weight:700; font-size:16px; color:var(--brown);
+    pointer-events:none; animation:rise .9s ease-out forwards; z-index:5;
+  }
+  @keyframes rise{from{opacity:1; transform:translateY(0)} to{opacity:0; transform:translateY(-55px)}}
+
+  #toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(120px);
+    background:var(--brown); color:var(--cream); padding:12px 22px; border-radius:14px;
+    font-size:14px; transition:transform .4s ease; z-index:20; max-width:90vw; text-align:center;
+  }
+  #toast.show{transform:translateX(-50%) translateY(0);}
+
+  footer{text-align:center; font-size:12px; color:var(--brown-2); padding:10px 0 20px;}
+  footer button{
+    background:none; border:none; color:var(--brown-2); text-decoration:underline;
+    cursor:pointer; font-size:12px; font-family:inherit;
+  }
+  @media (max-width:700px){
+    header{padding:8px 12px; gap:2px 10px;}
+    header h1{font-size:19px;}
+    .money-box{gap:8px; margin-left:auto;}
+    .money{font-size:21px; min-width:112px;}
+    .rate{font-size:12px; min-width:78px;}
+    .stats{order:3; width:100%; text-align:center; font-size:11px;}
+    main{padding:12px; gap:12px;}
+    #playfield{min-width:0;}
+    #shop{
+      min-width:0; flex:none; position:fixed; left:0; right:0; bottom:0; z-index:15;
+    }
+    #shop .panel{
+      border-radius:18px 18px 0 0; border-bottom:none;
+      max-height:68vh; overflow-y:auto; overscroll-behavior:contain;
+      box-shadow:0 -4px 18px rgba(92,74,46,.18);
+      padding:10px 14px calc(12px + env(safe-area-inset-bottom));
+    }
+    #shop h2{margin-bottom:0; cursor:pointer; display:flex; align-items:center; font-size:16px;}
+    #shop h2 .afford-badge{margin-left:8px;}
+    #shopChev{display:inline-block; margin-left:auto;}
+    #shopBody{display:none; margin-top:10px;}
+    #shop.open #shopBody{display:block;}
+    main{padding-bottom:64px;}
+    footer{padding-bottom:74px;}
+    .station{padding:8px 10px 10px;}
+    .station h2{font-size:15px;}
+    .art{width:104px; height:104px;}
+    .chute{height:22px;}
+    #splitChute{height:36px;}
+    .tanks{gap:10px;}
+    .tank{height:96px; width:70px;}
+    .tank-amt{font-size:15px;}
+    .tank-card h3{font-size:13px;}
+    .item{padding:7px 9px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🥚 Egg <span>Empire</span></h1>
+  <div class="money-box">
+    <div class="money" id="money">$0</div>
+    <div class="rate" id="income">$0/sec</div>
+  </div>
+  <div class="stats" id="lifetime">eggs processed: 0</div>
+</header>
+
+<main>
+  <section id="playfield">
+
+    <div class="station" id="crackStation">
+      <h2>Crack station</h2>
+      <div class="sub" id="crackSub">1 egg per click</div>
+      <svg class="art clicker" id="eggArt" viewBox="0 0 120 120" aria-label="Click to crack an egg" role="button">
+        <ellipse cx="60" cy="62" rx="40" ry="50" fill="#FFFDF7" stroke="#E8D9B5" stroke-width="5"/>
+        <g class="cracks" stroke="#C9B98A" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M38 34 l9 9 l-7 10 l11 8 l-5 11"/>
+          <path d="M82 38 l-8 10 l8 9 l-10 9"/>
+          <path d="M60 22 l3 10 l-6 8"/>
+        </g>
+        <circle cx="48" cy="58" r="4.5" fill="#5C4A2E"/>
+        <circle cx="72" cy="58" r="4.5" fill="#5C4A2E"/>
+        <ellipse cx="42" cy="70" rx="5" ry="3" fill="#F4A9A3" opacity=".7"/>
+        <ellipse cx="78" cy="70" rx="5" ry="3" fill="#F4A9A3" opacity=".7"/>
+        <path d="M52 74 q8 8 16 0" stroke="#5C4A2E" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="auto-tag" id="crackAuto"></div>
+    </div>
+
+    <div class="chute"></div>
+
+    <div class="station" id="sepStation">
+      <h2>Separator</h2>
+      <div class="sub" id="sepSub">1 egg per click</div>
+      <svg class="art clicker" id="sepArt" viewBox="0 0 120 120" aria-label="Click to separate cracked eggs" role="button">
+        <path d="M20 45 L100 45 L82 85 Q60 95 38 85 Z" fill="#FFF3D6" stroke="#E8D9B5" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M42 30 a18 14 0 0 1 36 0 l-6 12 l-8 -8 l-8 9 l-8 -7 Z" fill="#FFFDF7" stroke="#E8D9B5" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="52" cy="62" r="3.5" fill="#5C4A2E"/>
+        <circle cx="68" cy="62" r="3.5" fill="#5C4A2E"/>
+        <path d="M54 70 q6 6 12 0" stroke="#5C4A2E" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M38 96 q4 10 -2 16" stroke="#FFC93C" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M82 96 q-4 10 2 16" stroke="#ECE7DA" stroke-width="6" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div><span class="queue-badge" id="queue">0 cracked</span></div>
+      <div class="auto-tag" id="sepAuto"></div>
+    </div>
+
+    <svg id="splitChute" viewBox="0 0 340 44" fill="none" aria-hidden="true">
+      <path d="M170 2 C170 24, 110 16, 88 42" stroke="#E8D9B5" stroke-width="3" stroke-dasharray="7 7" stroke-linecap="round"/>
+      <path d="M170 2 C170 24, 230 16, 252 42" stroke="#E8D9B5" stroke-width="3" stroke-dasharray="7 7" stroke-linecap="round"/>
+    </svg>
+
+    <div class="tanks">
+      <div class="tank-card">
+        <h3>🟡 Yolk tank</h3>
+        <div class="tank" id="yolkTankEl"><div class="fill yolk" id="yolkFill" style="height:0%"></div></div>
+        <div class="tank-amt" id="yolkAmt">0</div>
+        <div class="tank-meta" id="yolkMeta">$3.00 each · sells 1/sec</div>
+      </div>
+      <div class="tank-card">
+        <h3>⚪ Whites tank</h3>
+        <div class="tank" id="whiteTankEl"><div class="fill white" id="whiteFill" style="height:0%"></div></div>
+        <div class="tank-amt" id="whiteAmt">0</div>
+        <div class="tank-meta" id="whiteMeta">$2.00 each · sells 1/sec</div>
+      </div>
+    </div>
+  </section>
+
+  <aside id="shop">
+    <div class="panel">
+      <h2 id="shopHeader">🛒 Upgrades <span class="afford-badge" id="affordBadge" style="display:none">0</span><span class="chev" id="shopChev">▴</span></h2>
+      <div id="shopBody">
+        <div class="shop-section">
+          <h3 class="sec-toggle"><span>Hands &amp; hardware</span><span class="chev">▾</span></h3>
+          <div id="hireList"></div>
+        </div>
+        <div class="shop-section">
+          <h3 class="sec-toggle"><span>Station skills</span><span class="chev">▾</span></h3>
+          <div id="stationList"></div>
+        </div>
+        <div class="shop-section">
+          <h3 class="sec-toggle"><span>Product lines</span><span class="chev">▾</span></h3>
+          <div id="productList"></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div id="toast"></div>
+<footer>autosaves every few seconds · <button id="resetBtn">reset progress</button></footer>
+
+<script>
+const SAVE_KEY = 'eggEmpireSave_v1';
+
+let S = {
+  money: 0, cracked: 0, yolk: 0, white: 0,
+  totalEggs: 0,
+  lvl: { crackPower:0, sepPower:0, yolkPrice:0, whitePrice:0, yolkPump:0, whitePump:0 },
+  owned: { farmhand:0, apprentice:0, crackbot:0, spinsep:0, factory:0 },
+  lastSeen: Date.now()
+};
+
+const HIRES = [
+  { id:'farmhand',   icon:'🧑‍🌾', name:'Farmhand',          desc:'Cracks 0.5 eggs/sec',              base:50,     mult:1.15, crack:0.5, sep:0   },
+  { id:'apprentice', icon:'👩‍🍳', name:'Kitchen apprentice', desc:'Separates 0.5 eggs/sec',           base:75,     mult:1.15, crack:0,   sep:0.5 },
+  { id:'crackbot',   icon:'🤖', name:'Crack-o-Matic',      desc:'Cracks 4 eggs/sec',                base:600,    mult:1.15, crack:4,   sep:0   },
+  { id:'spinsep',    icon:'🌀', name:'Spin separator',     desc:'Separates 4 eggs/sec',             base:900,    mult:1.15, crack:0,   sep:4   },
+  { id:'factory',    icon:'🏭', name:'Egg factory',        desc:'Cracks & separates 25 eggs/sec',   base:12000,  mult:1.18, crack:25,  sep:25  }
+];
+
+const UPGRADES = [
+  { id:'crackPower', icon:'💪', name:'Stronger wrists', desc:'+1 egg cracked per click',      base:25,  mult:3,   list:'stationList' },
+  { id:'sepPower',   icon:'🫳', name:'Deft hands',      desc:'+1 egg separated per click',    base:40,  mult:3,   list:'stationList' },
+  { id:'yolkPrice',  icon:'✨', name:'Golden yolks',    desc:'Yolk price ×1.5',               base:100, mult:2.5, list:'productList' },
+  { id:'whitePrice', icon:'☁️', name:'Cloud whites',    desc:'Whites price ×1.5',             base:100, mult:2.5, list:'productList' },
+  { id:'yolkPump',   icon:'🚰', name:'Yolk pump',       desc:'Yolk sell speed ×2',            base:150, mult:2.5, list:'productList' },
+  { id:'whitePump',  icon:'💨', name:'Whites pump',     desc:'Whites sell speed ×2',          base:150, mult:2.5, list:'productList' }
+];
+
+const $ = id => document.getElementById(id);
+
+function fmt(n){
+  if (n >= 1e12) return (n/1e12).toFixed(2)+'T';
+  if (n >= 1e9)  return (n/1e9).toFixed(2)+'B';
+  if (n >= 1e6)  return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e4)  return (n/1e3).toFixed(1)+'k';
+  if (n >= 100)  return Math.floor(n).toLocaleString();
+  return (Math.round(n*10)/10).toString();
+}
+function fmtMoney(n){ return '$' + fmt(n); }
+
+const crackPerClick = () => 1 + S.lvl.crackPower;
+const sepPerClick   = () => 1 + S.lvl.sepPower;
+const yolkPrice     = () => 3 * Math.pow(1.5, S.lvl.yolkPrice);
+const whitePrice    = () => 2 * Math.pow(1.5, S.lvl.whitePrice);
+const yolkRate      = () => 1 * Math.pow(2, S.lvl.yolkPump);
+const whiteRate     = () => 1 * Math.pow(2, S.lvl.whitePump);
+function autoCrack(){ return HIRES.reduce((s,h)=> s + h.crack*S.owned[h.id], 0); }
+function autoSep(){   return HIRES.reduce((s,h)=> s + h.sep*S.owned[h.id],   0); }
+const hireCost = h => Math.ceil(h.base * Math.pow(h.mult, S.owned[h.id]));
+const upgCost  = u => Math.ceil(u.base * Math.pow(u.mult, S.lvl[u.id]));
+
+function floaty(station, text){
+  const el = document.createElement('div');
+  el.className = 'floaty'; el.textContent = text;
+  el.style.left = (30 + Math.random()*40) + '%';
+  el.style.top = '45%';
+  station.appendChild(el);
+  setTimeout(()=>el.remove(), 900);
+}
+function pulse(svg, cls){
+  svg.classList.remove(cls); void svg.offsetWidth; svg.classList.add(cls);
+}
+
+function flyDrop(fromEl, toEl, kind, dur){
+  if (document.hidden) return;
+  const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+  const x0 = a.left + a.width/2 + (Math.random()*18 - 9);
+  const y0 = a.top + a.height*0.72;
+  const x1 = b.left + b.width/2 + (Math.random()*22 - 11);
+  const y1 = b.top + b.height*0.35;
+  const dx = x1 - x0, dy = y1 - y0;
+  const el = document.createElement('div');
+  el.className = 'drop ' + kind;
+  el.style.left = x0 + 'px'; el.style.top = y0 + 'px';
+  document.body.appendChild(el);
+  el.animate([
+    { transform:'translate(-50%,-50%) scale(.7)', opacity:.95 },
+    { transform:`translate(calc(${dx*0.35}px - 50%), calc(${dy*0.5}px - 50%)) scale(1.12)`, opacity:1, offset:.5 },
+    { transform:`translate(calc(${dx}px - 50%), calc(${dy}px - 50%)) scale(.85)`, opacity:.85 }
+  ], { duration: dur || 550, easing:'cubic-bezier(.5,.05,.6,.95)' }).onfinish = () => el.remove();
+}
+
+function shellPop(fromEl){
+  if (document.hidden) return;
+  const a = fromEl.getBoundingClientRect();
+  for (let i = 0; i < 3; i++){
+    const el = document.createElement('div');
+    el.className = 'shard';
+    const x0 = a.left + a.width/2, y0 = a.top + a.height*0.45;
+    el.style.left = x0 + 'px'; el.style.top = y0 + 'px';
+    document.body.appendChild(el);
+    const dx = (Math.random()*70 - 35), dy = -(20 + Math.random()*30);
+    el.animate([
+      { transform:'translate(-50%,-50%) rotate(0deg)', opacity:1 },
+      { transform:`translate(calc(${dx}px - 50%), calc(${dy}px - 50%)) rotate(${Math.random()>.5?180:-160}deg)`, opacity:1, offset:.55 },
+      { transform:`translate(calc(${dx*1.4}px - 50%), calc(${dy + 55}px - 50%)) rotate(${Math.random()>.5?320:-300}deg)`, opacity:0 }
+    ], { duration: 620, easing:'cubic-bezier(.3,.4,.6,1)' }).onfinish = () => el.remove();
+  }
+}
+
+$('eggArt').addEventListener('click', () => {
+  const n = crackPerClick();
+  S.cracked += n;
+  pulse($('eggArt'), 'wobble');
+  $('eggArt').classList.add('cracking');
+  setTimeout(()=> $('eggArt').classList.remove('cracking'), 320);
+  shellPop($('eggArt'));
+  flyDrop($('eggArt'), $('sepArt'), 'mix');
+  floaty($('crackStation'), '+' + fmt(n) + ' 🥚');
+  render();
+});
+
+$('sepArt').addEventListener('click', () => {
+  const n = Math.min(S.cracked, sepPerClick());
+  if (n <= 0){ floaty($('sepStation'), 'no eggs!'); return; }
+  S.cracked -= n; S.yolk += n; S.white += n; S.totalEggs += n;
+  pulse($('sepArt'), 'tilting');
+  flyDrop($('sepArt'), $('yolkTankEl'), 'yolkdrop', 600);
+  flyDrop($('sepArt'), $('whiteTankEl'), 'whitedrop', 640);
+  floaty($('sepStation'), '+' + fmt(n) + ' 🟡⚪');
+  render();
+});
+
+function buildShop(){
+  const hireList = $('hireList');
+  HIRES.forEach(h => {
+    const b = document.createElement('button');
+    b.className = 'item'; b.id = 'hire_' + h.id;
+    b.innerHTML = `<span class="icon">${h.icon}</span>
+      <span class="info"><span class="name">${h.name} <span class="owned"></span></span>
+      <span class="desc">${h.desc}</span></span><span class="cost"></span>`;
+    b.addEventListener('click', () => {
+      const c = hireCost(h);
+      if (S.money < c) return;
+      S.money -= c; S.owned[h.id]++; render();
+    });
+    hireList.appendChild(b);
+  });
+  UPGRADES.forEach(u => {
+    const b = document.createElement('button');
+    b.className = 'item'; b.id = 'upg_' + u.id;
+    b.innerHTML = `<span class="icon">${u.icon}</span>
+      <span class="info"><span class="name">${u.name} <span class="owned"></span></span>
+      <span class="desc">${u.desc}</span></span><span class="cost"></span>`;
+    b.addEventListener('click', () => {
+      const c = upgCost(u);
+      if (S.money < c) return;
+      S.money -= c; S.lvl[u.id]++; render();
+    });
+    $(u.list).appendChild(b);
+  });
+
+  $('shopHeader').addEventListener('click', () => {
+    if (!window.matchMedia('(max-width:700px)').matches) return;
+    const open = $('shop').classList.toggle('open');
+    $('shopChev').textContent = open ? '▾' : '▴';
+  });
+  document.querySelectorAll('.sec-toggle').forEach(h =>
+    h.addEventListener('click', () => h.parentElement.classList.toggle('collapsed'))
+  );
+}
+
+let incomeWindow = [];
+function render(){
+  $('money').textContent = '$' + fmt(Math.floor(S.money));
+  $('lifetime').textContent = 'eggs processed: ' + fmt(S.totalEggs);
+  $('queue').textContent = fmt(S.cracked) + ' cracked';
+  $('crackSub').textContent = fmt(crackPerClick()) + (crackPerClick() === 1 ? ' egg' : ' eggs') + ' per click';
+  $('sepSub').textContent = fmt(sepPerClick()) + (sepPerClick() === 1 ? ' egg' : ' eggs') + ' per click';
+  const ac = autoCrack(), as = autoSep();
+  $('crackAuto').textContent = ac > 0 ? '⚙ auto: ' + fmt(ac) + '/sec' : '';
+  $('sepAuto').textContent   = as > 0 ? '⚙ auto: ' + fmt(as) + '/sec' : '';
+
+  $('yolkAmt').textContent  = fmt(S.yolk);
+  $('whiteAmt').textContent = fmt(S.white);
+  $('yolkMeta').textContent  = '$' + yolkPrice().toFixed(2) + ' each · sells ' + fmt(yolkRate()) + '/sec';
+  $('whiteMeta').textContent = '$' + whitePrice().toFixed(2) + ' each · sells ' + fmt(whiteRate()) + '/sec';
+  $('yolkFill').style.height  = Math.min(100, Math.log10(1 + S.yolk)  * 33) + '%';
+  $('whiteFill').style.height = Math.min(100, Math.log10(1 + S.white) * 33) + '%';
+
+  HIRES.forEach(h => {
+    const b = $('hire_' + h.id), c = hireCost(h);
+    b.querySelector('.cost').textContent = fmtMoney(c);
+    b.querySelector('.owned').textContent = S.owned[h.id] > 0 ? '×' + S.owned[h.id] : '';
+    b.classList.toggle('locked', S.money < c);
+  });
+  UPGRADES.forEach(u => {
+    const b = $('upg_' + u.id), c = upgCost(u);
+    b.querySelector('.cost').textContent = fmtMoney(c);
+    b.querySelector('.owned').textContent = S.lvl[u.id] > 0 ? 'lv' + S.lvl[u.id] : '';
+    b.classList.toggle('locked', S.money < c);
+  });
+
+  const affordable = document.querySelectorAll('#shopBody .item:not(.locked)').length;
+  const badge = $('affordBadge');
+  if (affordable > 0){ badge.style.display = 'inline-block'; badge.textContent = affordable; }
+  else badge.style.display = 'none';
+}
+
+let last = performance.now();
+let lastAutoCrackDrop = 0, lastAutoSepDrop = 0, lastIncomeUpdate = 0;
+function tick(now){
+  const dt = Math.min((now - last) / 1000, 1);
+  last = now;
+
+  S.cracked += autoCrack() * dt;
+  const sep = Math.min(S.cracked, autoSep() * dt);
+  S.cracked -= sep; S.yolk += sep; S.white += sep; S.totalEggs += sep;
+
+  if (autoCrack() > 0 && now - lastAutoCrackDrop > 650){
+    lastAutoCrackDrop = now;
+    flyDrop($('eggArt'), $('sepArt'), 'mix', 700);
+  }
+  if (sep > 0 && now - lastAutoSepDrop > 650){
+    lastAutoSepDrop = now;
+    flyDrop($('sepArt'), $('yolkTankEl'), 'yolkdrop', 700);
+    flyDrop($('sepArt'), $('whiteTankEl'), 'whitedrop', 740);
+  }
+
+  let earned = 0;
+  const sy = Math.min(S.yolk, yolkRate() * dt);
+  S.yolk -= sy; earned += sy * yolkPrice();
+  const sw = Math.min(S.white, whiteRate() * dt);
+  S.white -= sw; earned += sw * whitePrice();
+  S.money += earned;
+
+  incomeWindow.push({ t: now, v: earned });
+  while (incomeWindow.length && incomeWindow[0].t < now - 3000) incomeWindow.shift();
+  if (now - lastIncomeUpdate > 250){
+    lastIncomeUpdate = now;
+    const span = incomeWindow.length > 1 ? (now - incomeWindow[0].t) / 1000 : 1;
+    const perSec = incomeWindow.reduce((s,e)=>s+e.v, 0) / Math.max(span, 0.5);
+    $('income').textContent = fmtMoney(perSec) + '/sec';
+  }
+
+  render();
+  requestAnimationFrame(tick);
+}
+
+function toast(msg, ms = 5000){
+  const t = $('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>t.classList.remove('show'), ms);
+}
+
+function save(){
+  S.lastSeen = Date.now();
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch(e){}
+}
+
+function load(){
+  let raw;
+  try { raw = localStorage.getItem(SAVE_KEY); } catch(e){}
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    S = { ...S, ...d, lvl:{ ...S.lvl, ...d.lvl }, owned:{ ...S.owned, ...d.owned } };
+  } catch(e){ return; }
+
+  const away = Math.min((Date.now() - S.lastSeen) / 1000, 8 * 3600);
+  if (away > 30){
+    const eff = 0.5;
+    const crackedMade = autoCrack() * away * eff;
+    const processed = Math.min(S.cracked + crackedMade, autoSep() * away * eff);
+    S.cracked = S.cracked + crackedMade - processed;
+    const yAvail = S.yolk + processed, wAvail = S.white + processed;
+    const ySold = Math.min(yAvail, yolkRate() * away * eff);
+    const wSold = Math.min(wAvail, whiteRate() * away * eff);
+    S.yolk = yAvail - ySold; S.white = wAvail - wSold;
+    S.totalEggs += processed;
+    const gained = ySold * yolkPrice() + wSold * whitePrice();
+    if (gained >= 1){
+      S.money += gained;
+      const mins = Math.round(away / 60);
+      toast('🐔 Welcome back! Your crew earned ' + fmtMoney(gained) + ' while you were away (' + (mins >= 60 ? Math.round(mins/60) + 'h' : mins + 'min') + ').', 7000);
+    }
+  }
+}
+
+$('resetBtn').addEventListener('click', () => {
+  if (!confirm('Scramble everything and start over?')) return;
+  try { localStorage.removeItem(SAVE_KEY); } catch(e){}
+  location.reload();
+});
+
+load();
+buildShop();
+render();
+setInterval(save, 5000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+window.addEventListener('beforeunload', save);
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
