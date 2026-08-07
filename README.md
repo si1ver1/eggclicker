@@ -1,0 +1,58 @@
+# 🥚 Egg Empire
+
+A cozy incremental clicker game that runs entirely in your browser. Crack eggs, separate the yolks from the whites, sell both streams for cash, and reinvest in workers, machines, and factories until the whole operation runs itself.
+
+Built as a single self-contained HTML file — no dependencies, no build step, no server required.
+
+## How to play
+
+Open `egg-empire.html` in any modern browser (double-clicking it is enough).
+
+The production line runs top to bottom:
+
+1. **Crack station** — tap/click the egg to crack it. Cracked eggs drop down into the separator queue.
+2. **Separator** — tap/click the bowl to split each cracked egg into one yolk and one white.
+3. **Tanks** — yolks and whites collect in their own tanks and **sell automatically** every second. Yolks are worth more; whites sell just as fast.
+
+Money appears in the sticky header, along with your current income per second and lifetime eggs processed.
+
+## Upgrades
+
+The shop has three sections:
+
+| Section | What it does |
+|---|---|
+| **Hands & hardware** | Automation. Farmhands and Crack-o-Matics crack eggs for you; Kitchen apprentices and Spin separators handle separation; Egg factories do the entire line at 25 eggs/sec. Buy as many of each as you can afford — prices rise ~15% per purchase. |
+| **Station skills** | Click power. Stronger wrists (+1 crack per click) and Deft hands (+1 separation per click). |
+| **Product lines** | Per-component boosts. Golden yolks / Cloud whites raise the sale price ×1.5 per level; the Yolk and Whites pumps double how fast each tank sells. |
+
+Tip: automation is only as fast as its slowest stage — a fleet of farmhands with nobody separating just piles up cracked eggs.
+
+## Saving & offline earnings
+
+- Progress autosaves to the browser's `localStorage` every 5 seconds (and when you close or hide the tab).
+- While the page is closed, your crew keeps working at **50% efficiency, capped at 8 hours**. The payout is applied (with a welcome-back toast) the next time you open the game.
+- Saves are per browser and per device. **Reset progress** is in the page footer.
+
+## Mobile
+
+The layout adapts to phones: a compact sticky header, a single-column production line that fits one screen, and touch-tuned tap targets (no double-tap-zoom delay). The upgrade shop becomes a bottom drawer — tap the **Upgrades** bar to expand it; a green badge on the bar shows how many items you can currently afford. Shop sections are individually collapsible on all screen sizes. Just open the same file on a mobile browser.
+
+## Development
+
+Everything lives in `egg-empire.html`:
+
+- **CSS** — cozy-farm theme variables at the top of the `<style>` block (`--cream`, `--yolk`, etc.), mobile styles in the `@media (max-width:700px)` block at the bottom of it.
+- **Game balance** — the `HIRES` and `UPGRADES` arrays near the top of the `<script>` define every purchasable item (base cost, cost multiplier, rates). The derived-stat helpers just below them (`yolkPrice`, `crackPerClick`, …) hold the pricing formulas.
+- **Animations** — `flyDrop()` (droplets between stations, via the Web Animations API), `shellPop()` (shell shards), and the `wobble` / `tilt` / `cracking` CSS classes.
+- **Game loop** — `tick()` runs on `requestAnimationFrame`; `load()` handles save migration and the offline-earnings calculation.
+
+To preview with live reloads during development, any static server works, e.g.:
+
+```bash
+python -m http.server 8137
+```
+
+then browse to `http://localhost:8137/egg-empire.html`. (`.claude/launch.json` is preconfigured to launch exactly that for Claude Code's browser preview.)
+
+Save data lives under the `eggEmpireSave_v1` key — bump the key name if you make a breaking change to the save format.
