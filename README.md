@@ -24,9 +24,15 @@ The shop has three sections:
 |---|---|
 | **Hands & hardware** | Automation. Farmhands and Crack-o-Matics crack eggs for you; Kitchen apprentices and Spin separators handle separation; Egg factories do the entire line at 25 eggs/sec. Buy as many of each as you can afford — prices rise ~15% per purchase. |
 | **Station skills** | Click power. Stronger wrists (+1 crack per click) and Deft hands (+1 separation per click). |
-| **Product lines** | Per-component boosts. Golden yolks / Cloud whites raise the sale price ×1.5 per level; the Yolk and Whites pumps double how fast each tank sells. |
+| **Product lines** | Per-component boosts. Golden yolks / Cloud whites raise the sale price ×1.5 per level; the Yolk and Whites pumps double how fast each tank sells; the Bigger vat upgrades double a tank's capacity. |
+| **Sell the farm** | Prestige. Once you've earned $50k in a run, sell the farm for **nest eggs** (more earnings = more nest eggs, on a square-root curve). Each nest egg permanently boosts all sale prices by +25%. Selling resets money, crew, and upgrades — nest eggs and lifetime stats persist, the background palette shifts, and your nest-egg count is watermarked behind the play area. |
 
-Tip: automation is only as fast as its slowest stage — a fleet of farmhands with nobody separating just piles up cracked eggs.
+### Tanks, capacity, and pressure
+
+- Each tank holds a limited amount (base 150). When either tank is full, the separator stalls and cracked eggs pile up in the queue — buy Bigger vats and pumps to keep the line moving.
+- **Pressure bonus**: a tank that's over 90% full sells at ×2 speed (shown as ⚡ in the tank meta). Riding near the limit is rewarded, not just punished.
+
+Tip: automation is only as fast as its slowest stage — a fleet of farmhands with nobody separating just piles up cracked eggs, and a full tank stalls everything upstream.
 
 ## Saving & offline earnings
 

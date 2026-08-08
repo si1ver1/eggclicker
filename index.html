@@ -8,7 +8,7 @@
 <title>Egg Empire — crack, separate, profit</title>
 <style>
   :root{
-    --cream:#FDF6E3; --cream-2:#FFF9EC; --card:#FFFDF7;
+    --cream:#FDF6E3; --dot:#F3EAD2; --cream-2:#FFF9EC; --card:#FFFDF7;
     --brown:#5C4A2E; --brown-2:#8A6D3B; --tan:#E8D9B5; --tan-2:#F3EAD2;
     --yolk:#FFC93C; --yolk-dark:#E0A400; --white-fill:#F4F1E8;
     --green:#7BAE4E; --green-dark:#4F7A2B; --pink:#F4A9A3;
@@ -19,8 +19,9 @@
   body{
     font-family:"Segoe UI", system-ui, sans-serif;
     background:var(--cream); color:var(--brown);
-    background-image:radial-gradient(#f3ead2 1.5px, transparent 1.5px);
+    background-image:radial-gradient(var(--dot) 1.5px, transparent 1.5px);
     background-size:28px 28px;
+    transition:background-color .8s ease;
     user-select:none; -webkit-user-select:none; overflow-x:hidden;
     touch-action:manipulation;
   }
@@ -38,7 +39,13 @@
     min-width:110px; text-align:left;}
   .stats{font-size:13px; color:var(--brown-2);}
 
-  main{display:flex; flex-wrap:wrap; gap:18px; padding:18px; max-width:1100px; margin:0 auto; align-items:flex-start;}
+  main{display:flex; flex-wrap:wrap; gap:18px; padding:18px; max-width:1100px; margin:0 auto; align-items:flex-start;
+    position:relative; z-index:1;}
+  #prestigeMark{
+    position:fixed; right:14px; bottom:14px; z-index:0; pointer-events:none;
+    font-size:92px; opacity:.12; line-height:1; user-select:none;
+  }
+  #prestigeMark span{font-size:56px; font-weight:700; color:var(--brown);}
   #playfield{flex:1 1 480px; min-width:320px; max-width:600px; margin:0 auto;
     display:flex; flex-direction:column; align-items:center;}
   #shop{flex:0 1 380px; min-width:300px;}
@@ -51,6 +58,8 @@
   .station .sub{font-size:12px; color:var(--brown-2); min-height:15px;}
   .clicker{cursor:pointer; transition:transform .06s ease;}
   .clicker:active{transform:scale(.94);}
+  .clicker:focus{outline:none;}
+  .clicker:focus-visible{outline:3px dashed var(--yolk-dark); outline-offset:3px; border-radius:14px;}
   .art{width:128px; height:128px; margin:2px auto; display:block; overflow:visible;}
 
   .wobble{animation:wob .28s ease;}
@@ -93,7 +102,10 @@
   .fill.yolk{background:var(--yolk);}
   .fill.white{background:#fff; border-top:3px solid #ECE7DA;}
   .tank-amt{font-size:17px; font-weight:700; margin-top:8px; font-variant-numeric:tabular-nums;}
+  .tank-amt .cap{font-size:12px; font-weight:400; color:var(--brown-2);}
   .tank-meta{font-size:11.5px; color:var(--brown-2); margin-top:2px; font-variant-numeric:tabular-nums;}
+  .tank.full{border-color:var(--yolk-dark);}
+  .prestige-note{font-size:12px; color:var(--brown-2); margin:2px 0 8px;}
 
   .drop{position:fixed; z-index:30; pointer-events:none; width:20px; height:20px; border-radius:50%;
     transform:translate(-50%,-50%); will-change:transform;}
@@ -183,8 +195,8 @@
     #shopChev{display:inline-block; margin-left:auto;}
     #shopBody{display:none; margin-top:10px;}
     #shop.open #shopBody{display:block;}
-    main{padding-bottom:64px;}
-    footer{padding-bottom:74px;}
+    main{padding-bottom:72px;}
+    footer{padding:16px 0 calc(100px + env(safe-area-inset-bottom));}
     .station{padding:8px 10px 10px;}
     .station h2{font-size:15px;}
     .art{width:104px; height:104px;}
@@ -195,10 +207,14 @@
     .tank-amt{font-size:15px;}
     .tank-card h3{font-size:13px;}
     .item{padding:7px 9px;}
+    #prestigeMark{bottom:calc(72px + env(safe-area-inset-bottom)); font-size:64px;}
+    #prestigeMark span{font-size:40px;}
   }
 </style>
 </head>
 <body>
+
+<div id="prestigeMark" aria-hidden="true" style="display:none">🪺<span id="prestigeLvl"></span></div>
 
 <header>
   <h1>🥚 Egg <span>Empire</span></h1>
@@ -286,6 +302,18 @@
           <h3 class="sec-toggle"><span>Product lines</span><span class="chev">▾</span></h3>
           <div id="productList"></div>
         </div>
+        <div class="shop-section">
+          <h3 class="sec-toggle"><span>Sell the farm</span><span class="chev">▾</span></h3>
+          <div>
+            <div class="prestige-note" id="prestigeNote"></div>
+            <button class="item" id="prestigeBtn">
+              <span class="icon">🪺</span>
+              <span class="info"><span class="name">Sell the farm <span class="owned" id="prestigeOwned"></span></span>
+              <span class="desc" id="prestigeDesc"></span></span>
+              <span class="cost" id="prestigeGain"></span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </aside>
@@ -299,8 +327,8 @@ const SAVE_KEY = 'eggEmpireSave_v1';
 
 let S = {
   money: 0, cracked: 0, yolk: 0, white: 0,
-  totalEggs: 0,
-  lvl: { crackPower:0, sepPower:0, yolkPrice:0, whitePrice:0, yolkPump:0, whitePump:0 },
+  totalEggs: 0, runEarned: 0, nestEggs: 0, prestiges: 0,
+  lvl: { crackPower:0, sepPower:0, yolkPrice:0, whitePrice:0, yolkPump:0, whitePump:0, yolkCap:0, whiteCap:0 },
   owned: { farmhand:0, apprentice:0, crackbot:0, spinsep:0, factory:0 },
   lastSeen: Date.now()
 };
@@ -319,7 +347,18 @@ const UPGRADES = [
   { id:'yolkPrice',  icon:'✨', name:'Golden yolks',    desc:'Yolk price ×1.5',               base:100, mult:2.5, list:'productList' },
   { id:'whitePrice', icon:'☁️', name:'Cloud whites',    desc:'Whites price ×1.5',             base:100, mult:2.5, list:'productList' },
   { id:'yolkPump',   icon:'🚰', name:'Yolk pump',       desc:'Yolk sell speed ×2',            base:150, mult:2.5, list:'productList' },
-  { id:'whitePump',  icon:'💨', name:'Whites pump',     desc:'Whites sell speed ×2',          base:150, mult:2.5, list:'productList' }
+  { id:'whitePump',  icon:'💨', name:'Whites pump',     desc:'Whites sell speed ×2',          base:150, mult:2.5, list:'productList' },
+  { id:'yolkCap',    icon:'🛢️', name:'Bigger yolk vat', desc:'Yolk tank capacity ×2',         base:250, mult:2.2, list:'productList' },
+  { id:'whiteCap',   icon:'🪣', name:'Bigger whites vat', desc:'Whites tank capacity ×2',     base:250, mult:2.2, list:'productList' }
+];
+
+const PALETTES = [
+  { bg:'#FDF6E3', dot:'#F3EAD2' },
+  { bg:'#EDF6E6', dot:'#DCEDD0' },
+  { bg:'#E8F3F8', dot:'#D4E8F1' },
+  { bg:'#F1ECF9', dot:'#E3D9F1' },
+  { bg:'#FBEEE2', dot:'#F4DFC8' },
+  { bg:'#FBF3D3', dot:'#F0E4AB' }
 ];
 
 const $ = id => document.getElementById(id);
@@ -336,10 +375,19 @@ function fmtMoney(n){ return '$' + fmt(n); }
 
 const crackPerClick = () => 1 + S.lvl.crackPower;
 const sepPerClick   = () => 1 + S.lvl.sepPower;
-const yolkPrice     = () => 3 * Math.pow(1.5, S.lvl.yolkPrice);
-const whitePrice    = () => 2 * Math.pow(1.5, S.lvl.whitePrice);
+const prestigeMult  = () => 1 + 0.25 * S.nestEggs;
+const yolkPrice     = () => 3 * Math.pow(1.5, S.lvl.yolkPrice) * prestigeMult();
+const whitePrice    = () => 2 * Math.pow(1.5, S.lvl.whitePrice) * prestigeMult();
 const yolkRate      = () => 1 * Math.pow(2, S.lvl.yolkPump);
 const whiteRate     = () => 1 * Math.pow(2, S.lvl.whitePump);
+const yolkCap       = () => 150 * Math.pow(2, S.lvl.yolkCap);
+const whiteCap      = () => 150 * Math.pow(2, S.lvl.whiteCap);
+const yolkPressure  = () => S.yolk >= yolkCap() * 0.9;
+const whitePressure = () => S.white >= whiteCap() * 0.9;
+const yolkSellRate  = () => yolkRate() * (yolkPressure() ? 2 : 1);
+const whiteSellRate = () => whiteRate() * (whitePressure() ? 2 : 1);
+const tankSpace     = () => Math.max(0, Math.min(yolkCap() - S.yolk, whiteCap() - S.white));
+const prestigeGain  = () => Math.floor(Math.sqrt(S.runEarned / 50000));
 function autoCrack(){ return HIRES.reduce((s,h)=> s + h.crack*S.owned[h.id], 0); }
 function autoSep(){   return HIRES.reduce((s,h)=> s + h.sep*S.owned[h.id],   0); }
 const hireCost = h => Math.ceil(h.base * Math.pow(h.mult, S.owned[h.id]));
@@ -407,8 +455,8 @@ $('eggArt').addEventListener('click', () => {
 });
 
 $('sepArt').addEventListener('click', () => {
-  const n = Math.min(S.cracked, sepPerClick());
-  if (n <= 0){ floaty($('sepStation'), 'no eggs!'); return; }
+  const n = Math.min(S.cracked, sepPerClick(), tankSpace());
+  if (n < 0.05){ floaty($('sepStation'), S.cracked < 0.05 ? 'no eggs!' : 'tanks full!'); return; }
   S.cracked -= n; S.yolk += n; S.white += n; S.totalEggs += n;
   pulse($('sepArt'), 'tilting');
   flyDrop($('sepArt'), $('yolkTankEl'), 'yolkdrop', 600);
@@ -446,6 +494,19 @@ function buildShop(){
     $(u.list).appendChild(b);
   });
 
+  $('prestigeBtn').addEventListener('click', () => {
+    const g = prestigeGain();
+    if (g < 1) return;
+    const pct = Math.round((1 + 0.25 * (S.nestEggs + g) - 1) * 100);
+    if (!confirm('Sell the farm for ' + g + ' nest egg' + (g > 1 ? 's' : '') + '? Money, crew, upgrades and tanks reset — but all prices stay +' + pct + '% forever.')) return;
+    S.nestEggs += g; S.prestiges++;
+    S.money = 0; S.cracked = 0; S.yolk = 0; S.white = 0; S.runEarned = 0;
+    Object.keys(S.lvl).forEach(k => S.lvl[k] = 0);
+    Object.keys(S.owned).forEach(k => S.owned[k] = 0);
+    applyPalette(); save(); render();
+    toast('🪺 Farm sold! +' + g + ' nest egg' + (g > 1 ? 's' : '') + ' — all prices now +' + Math.round((prestigeMult() - 1) * 100) + '% forever.', 7000);
+  });
+
   $('shopHeader').addEventListener('click', () => {
     if (!window.matchMedia('(max-width:700px)').matches) return;
     const open = $('shop').classList.toggle('open');
@@ -459,7 +520,7 @@ function buildShop(){
 let incomeWindow = [];
 function render(){
   $('money').textContent = '$' + fmt(Math.floor(S.money));
-  $('lifetime').textContent = 'eggs processed: ' + fmt(S.totalEggs);
+  $('lifetime').textContent = 'eggs processed: ' + fmt(S.totalEggs) + (S.nestEggs > 0 ? ' · 🪺 ' + S.nestEggs : '');
   $('queue').textContent = fmt(S.cracked) + ' cracked';
   $('crackSub').textContent = fmt(crackPerClick()) + (crackPerClick() === 1 ? ' egg' : ' eggs') + ' per click';
   $('sepSub').textContent = fmt(sepPerClick()) + (sepPerClick() === 1 ? ' egg' : ' eggs') + ' per click';
@@ -467,12 +528,14 @@ function render(){
   $('crackAuto').textContent = ac > 0 ? '⚙ auto: ' + fmt(ac) + '/sec' : '';
   $('sepAuto').textContent   = as > 0 ? '⚙ auto: ' + fmt(as) + '/sec' : '';
 
-  $('yolkAmt').textContent  = fmt(S.yolk);
-  $('whiteAmt').textContent = fmt(S.white);
-  $('yolkMeta').textContent  = '$' + yolkPrice().toFixed(2) + ' each · sells ' + fmt(yolkRate()) + '/sec';
-  $('whiteMeta').textContent = '$' + whitePrice().toFixed(2) + ' each · sells ' + fmt(whiteRate()) + '/sec';
-  $('yolkFill').style.height  = Math.min(100, Math.log10(1 + S.yolk)  * 33) + '%';
-  $('whiteFill').style.height = Math.min(100, Math.log10(1 + S.white) * 33) + '%';
+  $('yolkAmt').innerHTML  = fmt(S.yolk)  + ' <span class="cap">/ ' + fmt(yolkCap())  + '</span>';
+  $('whiteAmt').innerHTML = fmt(S.white) + ' <span class="cap">/ ' + fmt(whiteCap()) + '</span>';
+  $('yolkMeta').textContent  = '$' + yolkPrice().toFixed(2) + ' each · sells ' + fmt(yolkSellRate()) + '/sec' + (yolkPressure() ? ' ⚡' : '');
+  $('whiteMeta').textContent = '$' + whitePrice().toFixed(2) + ' each · sells ' + fmt(whiteSellRate()) + '/sec' + (whitePressure() ? ' ⚡' : '');
+  $('yolkFill').style.height  = Math.min(100, S.yolk  / yolkCap()  * 100) + '%';
+  $('whiteFill').style.height = Math.min(100, S.white / whiteCap() * 100) + '%';
+  $('yolkTankEl').classList.toggle('full', S.yolk >= yolkCap() - 0.5);
+  $('whiteTankEl').classList.toggle('full', S.white >= whiteCap() - 0.5);
 
   HIRES.forEach(h => {
     const b = $('hire_' + h.id), c = hireCost(h);
@@ -487,10 +550,32 @@ function render(){
     b.classList.toggle('locked', S.money < c);
   });
 
+  const g = prestigeGain();
+  $('prestigeBtn').classList.toggle('locked', g < 1);
+  $('prestigeOwned').textContent = S.nestEggs > 0 ? '×' + S.nestEggs : '';
+  $('prestigeGain').textContent = g >= 1 ? '+' + g + ' 🪺' : '';
+  $('prestigeDesc').textContent = S.nestEggs > 0
+    ? 'Prices +' + Math.round((prestigeMult() - 1) * 100) + '% from nest eggs'
+    : 'Trade everything for nest eggs (+25% prices each, forever)';
+  $('prestigeNote').textContent = g >= 1
+    ? 'Selling now earns +' + g + ' nest egg' + (g > 1 ? 's' : '') + '. Keep earning this run for a bigger payout.'
+    : 'Earn ' + fmtMoney(50000) + ' in one run to sell the farm. This run: ' + fmtMoney(S.runEarned) + '.';
+
   const affordable = document.querySelectorAll('#shopBody .item:not(.locked)').length;
   const badge = $('affordBadge');
   if (affordable > 0){ badge.style.display = 'inline-block'; badge.textContent = affordable; }
   else badge.style.display = 'none';
+}
+
+function applyPalette(){
+  const p = PALETTES[S.prestiges % PALETTES.length];
+  document.documentElement.style.setProperty('--cream', p.bg);
+  document.documentElement.style.setProperty('--dot', p.dot);
+  const mark = $('prestigeMark');
+  if (S.nestEggs > 0){
+    mark.style.display = 'block';
+    $('prestigeLvl').textContent = '×' + S.nestEggs;
+  } else mark.style.display = 'none';
 }
 
 let last = performance.now();
@@ -501,7 +586,7 @@ function tick(now){
   S.lastSeen = Date.now();
 
   S.cracked += autoCrack() * dt;
-  const sep = Math.min(S.cracked, autoSep() * dt);
+  const sep = Math.min(S.cracked, autoSep() * dt, tankSpace());
   S.cracked -= sep; S.yolk += sep; S.white += sep; S.totalEggs += sep;
 
   if (autoCrack() > 0 && now - lastAutoCrackDrop > 650){
@@ -515,11 +600,12 @@ function tick(now){
   }
 
   let earned = 0;
-  const sy = Math.min(S.yolk, yolkRate() * dt);
+  const sy = Math.min(S.yolk, yolkSellRate() * dt);
   S.yolk -= sy; earned += sy * yolkPrice();
-  const sw = Math.min(S.white, whiteRate() * dt);
+  const sw = Math.min(S.white, whiteSellRate() * dt);
   S.white -= sw; earned += sw * whitePrice();
   S.money += earned;
+  S.runEarned += earned;
 
   incomeWindow.push({ t: now, v: earned });
   while (incomeWindow.length && incomeWindow[0].t < now - 3000) incomeWindow.shift();
@@ -550,17 +636,26 @@ function creditAway(){
   if (away <= 30) return;
   S.lastSeen = Date.now();
   const eff = 0.5;
+  const ySellMax = yolkRate() * away * eff, wSellMax = whiteRate() * away * eff;
   const crackedMade = autoCrack() * away * eff;
-  const processed = Math.min(S.cracked + crackedMade, autoSep() * away * eff);
-  S.cracked = S.cracked + crackedMade - processed;
+  const crackedAvail = S.cracked + crackedMade;
+  const processed = Math.min(
+    crackedAvail,
+    autoSep() * away * eff,
+    Math.max(0, yolkCap() - S.yolk) + ySellMax,
+    Math.max(0, whiteCap() - S.white) + wSellMax
+  );
+  S.cracked = crackedAvail - processed;
   const yAvail = S.yolk + processed, wAvail = S.white + processed;
-  const ySold = Math.min(yAvail, yolkRate() * away * eff);
-  const wSold = Math.min(wAvail, whiteRate() * away * eff);
-  S.yolk = yAvail - ySold; S.white = wAvail - wSold;
+  const ySold = Math.min(yAvail, ySellMax);
+  const wSold = Math.min(wAvail, wSellMax);
+  S.yolk = Math.min(yAvail - ySold, yolkCap());
+  S.white = Math.min(wAvail - wSold, whiteCap());
   S.totalEggs += processed;
   const gained = ySold * yolkPrice() + wSold * whitePrice();
   if (gained >= 1){
     S.money += gained;
+    S.runEarned += gained;
     const mins = Math.round(away / 60);
     toast('🐔 Welcome back! Your crew earned ' + fmtMoney(gained) + ' while you were away (' + (mins >= 60 ? Math.round(mins/60) + 'h' : mins + 'min') + ').', 7000);
   }
@@ -595,6 +690,7 @@ $('resetBtn').addEventListener('click', () => {
 
 load();
 buildShop();
+applyPalette();
 render();
 setInterval(save, 5000);
 document.addEventListener('visibilitychange', () => {
