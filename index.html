@@ -154,6 +154,16 @@
   .item .desc{font-size:11.5px; color:var(--brown-2);}
   .item .cost{font-size:13px; font-weight:700; color:var(--green-dark); white-space:nowrap; font-variant-numeric:tabular-nums;}
 
+  #goldenEgg{
+    position:fixed; z-index:40; width:44px; height:56px; cursor:pointer; border:0; padding:0;
+    background:radial-gradient(circle at 35% 30%, #FFE9A8, #FFC93C 55%, #E0A400);
+    border:3px solid #E0A400; border-radius:50% 50% 50% 50% / 62% 62% 40% 40%;
+    box-shadow:0 0 16px 5px rgba(255,201,60,.55);
+    animation:goldPulse .8s ease-in-out infinite alternate;
+  }
+  @keyframes goldPulse{from{transform:scale(1) rotate(-7deg)} to{transform:scale(1.14) rotate(7deg)}}
+  body.frenzy .money{color:var(--yolk-dark); animation:moneyPulse .45s ease-in-out infinite alternate;}
+  @keyframes moneyPulse{from{transform:scale(1)} to{transform:scale(1.05)}}
   .floaty{
     position:absolute; font-weight:700; font-size:16px; color:var(--brown);
     pointer-events:none; animation:rise .9s ease-out forwards; z-index:5;
@@ -334,23 +344,25 @@ let S = {
 };
 
 const HIRES = [
-  { id:'farmhand',   icon:'🧑‍🌾', name:'Farmhand',          desc:'Cracks 0.5 eggs/sec',              base:50,     mult:1.15, crack:0.5, sep:0   },
-  { id:'apprentice', icon:'👩‍🍳', name:'Kitchen apprentice', desc:'Separates 0.5 eggs/sec',           base:75,     mult:1.15, crack:0,   sep:0.5 },
-  { id:'crackbot',   icon:'🤖', name:'Crack-o-Matic',      desc:'Cracks 4 eggs/sec',                base:600,    mult:1.15, crack:4,   sep:0   },
-  { id:'spinsep',    icon:'🌀', name:'Spin separator',     desc:'Separates 4 eggs/sec',             base:900,    mult:1.15, crack:0,   sep:4   },
-  { id:'factory',    icon:'🏭', name:'Egg factory',        desc:'Cracks & separates 25 eggs/sec',   base:12000,  mult:1.18, crack:25,  sep:25  }
+  { id:'farmhand',   icon:'🧑‍🌾', name:'Farmhand',          desc:'Cracks 0.3 eggs/sec',              base:50,     mult:1.18, crack:0.3, sep:0   },
+  { id:'apprentice', icon:'👩‍🍳', name:'Kitchen apprentice', desc:'Separates 0.3 eggs/sec',           base:75,     mult:1.18, crack:0,   sep:0.3 },
+  { id:'crackbot',   icon:'🤖', name:'Crack-o-Matic',      desc:'Cracks 2.5 eggs/sec',              base:1500,   mult:1.18, crack:2.5, sep:0   },
+  { id:'spinsep',    icon:'🌀', name:'Spin separator',     desc:'Separates 2.5 eggs/sec',           base:2250,   mult:1.18, crack:0,   sep:2.5 },
+  { id:'factory',    icon:'🏭', name:'Egg factory',        desc:'Cracks & separates 12 eggs/sec',   base:40000,  mult:1.22, crack:12,  sep:12  }
 ];
 
 const UPGRADES = [
-  { id:'crackPower', icon:'💪', name:'Stronger wrists', desc:'+1 egg cracked per click',      base:25,  mult:3,   list:'stationList' },
-  { id:'sepPower',   icon:'🫳', name:'Deft hands',      desc:'+1 egg separated per click',    base:40,  mult:3,   list:'stationList' },
-  { id:'yolkPrice',  icon:'✨', name:'Golden yolks',    desc:'Yolk price ×1.5',               base:100, mult:2.5, list:'productList' },
-  { id:'whitePrice', icon:'☁️', name:'Cloud whites',    desc:'Whites price ×1.5',             base:100, mult:2.5, list:'productList' },
-  { id:'yolkPump',   icon:'🚰', name:'Yolk pump',       desc:'Yolk sell speed ×2',            base:150, mult:2.5, list:'productList' },
-  { id:'whitePump',  icon:'💨', name:'Whites pump',     desc:'Whites sell speed ×2',          base:150, mult:2.5, list:'productList' },
-  { id:'yolkCap',    icon:'🛢️', name:'Bigger yolk vat', desc:'Yolk tank capacity ×2',         base:250, mult:2.2, list:'productList' },
-  { id:'whiteCap',   icon:'🪣', name:'Bigger whites vat', desc:'Whites tank capacity ×2',     base:250, mult:2.2, list:'productList' }
+  { id:'crackPower', icon:'💪', name:'Stronger wrists', desc:'+1 egg cracked per click',      base:25,  mult:3.2, list:'stationList' },
+  { id:'sepPower',   icon:'🫳', name:'Deft hands',      desc:'+1 egg separated per click',    base:40,  mult:3.2, list:'stationList' },
+  { id:'yolkPrice',  icon:'✨', name:'Golden yolks',    desc:'Yolk price ×1.4',               base:150, mult:3,   list:'productList' },
+  { id:'whitePrice', icon:'☁️', name:'Cloud whites',    desc:'Whites price ×1.4',             base:150, mult:3,   list:'productList' },
+  { id:'yolkPump',   icon:'🚰', name:'Yolk pump',       desc:'Yolk sell speed ×2',            base:200, mult:3,   list:'productList' },
+  { id:'whitePump',  icon:'💨', name:'Whites pump',     desc:'Whites sell speed ×2',          base:200, mult:3,   list:'productList' },
+  { id:'yolkCap',    icon:'🛢️', name:'Bigger yolk vat', desc:'Yolk tank capacity ×2',         base:300, mult:2.4, list:'productList' },
+  { id:'whiteCap',   icon:'🪣', name:'Bigger whites vat', desc:'Whites tank capacity ×2',     base:300, mult:2.4, list:'productList' }
 ];
+
+const MILESTONES = [250, 1000, 5000, 20000, 100000, 500000, 2500000];
 
 const PALETTES = [
   { bg:'#FDF6E3', dot:'#F3EAD2' },
@@ -373,11 +385,16 @@ function fmt(n){
 }
 function fmtMoney(n){ return '$' + fmt(n); }
 
+let frenzyUntil = 0;
 const crackPerClick = () => 1 + S.lvl.crackPower;
 const sepPerClick   = () => 1 + S.lvl.sepPower;
 const prestigeMult  = () => 1 + 0.25 * S.nestEggs;
-const yolkPrice     = () => 3 * Math.pow(1.5, S.lvl.yolkPrice) * prestigeMult();
-const whitePrice    = () => 2 * Math.pow(1.5, S.lvl.whitePrice) * prestigeMult();
+const milestonesReached = () => MILESTONES.filter(t => S.totalEggs >= t).length;
+const milestoneMult = () => Math.pow(1.05, milestonesReached());
+const frenzyMult    = () => Date.now() < frenzyUntil ? 3 : 1;
+const priceMult     = () => prestigeMult() * milestoneMult() * frenzyMult();
+const yolkPrice     = () => 1.5 * Math.pow(1.4, S.lvl.yolkPrice) * priceMult();
+const whitePrice    = () => 1.0 * Math.pow(1.4, S.lvl.whitePrice) * priceMult();
 const yolkRate      = () => 1 * Math.pow(2, S.lvl.yolkPump);
 const whiteRate     = () => 1 * Math.pow(2, S.lvl.whitePump);
 const yolkCap       = () => 150 * Math.pow(2, S.lvl.yolkCap);
@@ -387,7 +404,7 @@ const whitePressure = () => S.white >= whiteCap() * 0.9;
 const yolkSellRate  = () => yolkRate() * (yolkPressure() ? 2 : 1);
 const whiteSellRate = () => whiteRate() * (whitePressure() ? 2 : 1);
 const tankSpace     = () => Math.max(0, Math.min(yolkCap() - S.yolk, whiteCap() - S.white));
-const prestigeGain  = () => Math.floor(Math.sqrt(S.runEarned / 50000));
+const prestigeGain  = () => Math.floor(Math.sqrt(S.runEarned / 150000));
 function autoCrack(){ return HIRES.reduce((s,h)=> s + h.crack*S.owned[h.id], 0); }
 function autoSep(){   return HIRES.reduce((s,h)=> s + h.sep*S.owned[h.id],   0); }
 const hireCost = h => Math.ceil(h.base * Math.pow(h.mult, S.owned[h.id]));
@@ -559,7 +576,7 @@ function render(){
     : 'Trade everything for nest eggs (+25% prices each, forever)';
   $('prestigeNote').textContent = g >= 1
     ? 'Selling now earns +' + g + ' nest egg' + (g > 1 ? 's' : '') + '. Keep earning this run for a bigger payout.'
-    : 'Earn ' + fmtMoney(50000) + ' in one run to sell the farm. This run: ' + fmtMoney(S.runEarned) + '.';
+    : 'Earn ' + fmtMoney(150000) + ' in one run to sell the farm. This run: ' + fmtMoney(S.runEarned) + '.';
 
   const affordable = document.querySelectorAll('#shopBody .item:not(.locked)').length;
   const badge = $('affordBadge');
@@ -576,6 +593,46 @@ function applyPalette(){
     mark.style.display = 'block';
     $('prestigeLvl').textContent = '×' + S.nestEggs;
   } else mark.style.display = 'none';
+}
+
+let goldenEl = null, goldenTimeout = null;
+let nextGoldenAt = performance.now() + 45000 + Math.random() * 45000;
+let lastPerSec = 0;
+let lastMilestoneCount = null;
+
+function scheduleGolden(now){
+  nextGoldenAt = now + 90000 + Math.random() * 150000;
+}
+
+function removeGolden(){
+  if (goldenTimeout) clearTimeout(goldenTimeout);
+  if (goldenEl) goldenEl.remove();
+  goldenEl = null; goldenTimeout = null;
+}
+
+function spawnGolden(now){
+  const pf = $('playfield').getBoundingClientRect();
+  const x = Math.max(10, pf.left + 20 + Math.random() * Math.max(40, pf.width - 90));
+  const y = Math.max(70, pf.top + 30 + Math.random() * Math.max(40, Math.min(pf.height, window.innerHeight - 160) - 60));
+  goldenEl = document.createElement('button');
+  goldenEl.id = 'goldenEgg';
+  goldenEl.setAttribute('aria-label', 'Golden egg! Click for a bonus');
+  goldenEl.style.left = x + 'px'; goldenEl.style.top = y + 'px';
+  goldenEl.addEventListener('click', () => {
+    if (Math.random() < 0.5){
+      const bonus = Math.max(75, Math.round(S.money * 0.15 + lastPerSec * 30));
+      S.money += bonus; S.runEarned += bonus;
+      toast('🥚✨ Golden egg! +' + fmtMoney(bonus) + '!', 5000);
+    } else {
+      frenzyUntil = Date.now() + 20000;
+      toast('🥚✨ FRENZY! All prices ×3 for 20 seconds — sell, sell, sell!', 5000);
+    }
+    removeGolden();
+    scheduleGolden(performance.now());
+    render();
+  });
+  document.body.appendChild(goldenEl);
+  goldenTimeout = setTimeout(() => { removeGolden(); scheduleGolden(performance.now()); }, 12000);
 }
 
 let last = performance.now();
@@ -612,8 +669,18 @@ function tick(now){
   if (now - lastIncomeUpdate > 250){
     lastIncomeUpdate = now;
     const span = incomeWindow.length > 1 ? (now - incomeWindow[0].t) / 1000 : 1;
-    const perSec = incomeWindow.reduce((s,e)=>s+e.v, 0) / Math.max(span, 0.5);
-    $('income').textContent = fmtMoney(perSec) + '/sec';
+    lastPerSec = incomeWindow.reduce((s,e)=>s+e.v, 0) / Math.max(span, 0.5);
+    $('income').textContent = fmtMoney(lastPerSec) + '/sec';
+  }
+
+  if (!goldenEl && now >= nextGoldenAt && !document.hidden) spawnGolden(now);
+  document.body.classList.toggle('frenzy', Date.now() < frenzyUntil);
+
+  const mc = milestonesReached();
+  if (lastMilestoneCount === null) lastMilestoneCount = mc;
+  else if (mc > lastMilestoneCount){
+    lastMilestoneCount = mc;
+    toast('🎉 Milestone: ' + MILESTONES[mc - 1].toLocaleString() + ' eggs processed! Prices +5% (total +' + Math.round((milestoneMult() - 1) * 100) + '%).', 6000);
   }
 
   render();
