@@ -224,7 +224,7 @@
 </head>
 <body>
 
-<div id="prestigeMark" aria-hidden="true" style="display:none">🪺<span id="prestigeLvl"></span></div>
+<div id="prestigeMark" aria-hidden="true" style="display:none"></div>
 
 <header>
   <h1>🥚 Egg <span>Empire</span></h1>
@@ -324,6 +324,18 @@
             </button>
           </div>
         </div>
+        <div class="shop-section">
+          <h3 class="sec-toggle"><span>Hatch a new world</span><span class="chev">▾</span></h3>
+          <div>
+            <div class="prestige-note" id="levelNote"></div>
+            <button class="item" id="levelBtn">
+              <span class="icon">🐣</span>
+              <span class="info"><span class="name">Level up <span class="owned" id="levelOwned"></span></span>
+              <span class="desc" id="levelDesc"></span></span>
+              <span class="cost" id="levelGain"></span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </aside>
@@ -337,7 +349,7 @@ const SAVE_KEY = 'eggEmpireSave_v1';
 
 let S = {
   money: 0, cracked: 0, yolk: 0, white: 0,
-  totalEggs: 0, runEarned: 0, nestEggs: 0, prestiges: 0,
+  totalEggs: 0, runEarned: 0, nestEggs: 0, prestiges: 0, level: 1,
   lvl: { crackPower:0, sepPower:0, yolkPrice:0, whitePrice:0, yolkPump:0, whitePump:0, yolkCap:0, whiteCap:0, yolkValve:0, whiteValve:0 },
   owned: { farmhand:0, apprentice:0, crackbot:0, spinsep:0, van:0, freight:0, factory:0 },
   lastSeen: Date.now()
@@ -368,6 +380,128 @@ const UPGRADES = [
 
 const MILESTONES = [250, 1000, 5000, 20000, 100000, 500000, 2500000];
 
+const LEVEL_REQ = 5;
+const DEFAULT_VARS = {
+  'cream':'#FDF6E3','dot':'#F3EAD2','cream-2':'#FFF9EC','card':'#FFFDF7',
+  'brown':'#5C4A2E','brown-2':'#8A6D3B','tan':'#E8D9B5','tan-2':'#F3EAD2',
+  'yolk':'#FFC93C','yolk-dark':'#E0A400','green':'#7BAE4E','green-dark':'#4F7A2B','pink':'#F4A9A3'
+};
+const THEMES = [
+  { name:'Cozy farm', icon:'🌾', vars:{} },
+  { name:'Underground hencave', icon:'🍄', vars:{
+    'cream':'#2A2118','dot':'#382C1E','cream-2':'#3A2E1F','card':'#332818',
+    'brown':'#F0E2C8','brown-2':'#C7A97F','tan':'#5F4A2F','tan-2':'#453623',
+    'yolk':'#FFC93C','yolk-dark':'#FFB520','green':'#8FCE62','green-dark':'#9FE07A','pink':'#D98873' },
+    skins:{
+      farmhand:{icon:'⛏️', name:'Mole miner'}, apprentice:{icon:'🦇', name:'Bat sous-chef'},
+      crackbot:{icon:'🪨', name:'Rock crusher'}, spinsep:{icon:'💧', name:'Stalactite sifter'},
+      van:{icon:'🚃', name:'Mine cart'}, freight:{icon:'🚜', name:'Excavator'},
+      factory:{icon:'🕳️', name:'Cavern refinery'} },
+    eggSvg:`<ellipse cx="60" cy="62" rx="40" ry="50" fill="#F2E4C4" stroke="#7A5F3C" stroke-width="5"/>
+      <ellipse cx="45" cy="38" rx="4" ry="3" fill="#C7A97F"/><ellipse cx="75" cy="32" rx="3" ry="2.5" fill="#C7A97F"/>
+      <ellipse cx="80" cy="90" rx="4" ry="3" fill="#C7A97F"/><ellipse cx="38" cy="84" rx="3" ry="2.5" fill="#C7A97F"/>
+      <g class="cracks" stroke="#8A6D4B" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M38 34 l9 9 l-7 10 l11 8 l-5 11"/><path d="M82 38 l-8 10 l8 9 l-10 9"/><path d="M60 22 l3 10 l-6 8"/>
+      </g>
+      <circle cx="48" cy="58" r="4.5" fill="#4A3521"/><circle cx="72" cy="58" r="4.5" fill="#4A3521"/>
+      <ellipse cx="42" cy="70" rx="5" ry="3" fill="#D98873" opacity=".7"/><ellipse cx="78" cy="70" rx="5" ry="3" fill="#D98873" opacity=".7"/>
+      <path d="M52 74 q8 8 16 0" stroke="#4A3521" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M14 110 q0 -11 11 -11 q11 0 11 11 Z" fill="#C85B4A"/>
+      <circle cx="21" cy="104" r="1.8" fill="#F5E9D0"/><circle cx="29" cy="105" r="1.4" fill="#F5E9D0"/>
+      <rect x="22" y="110" width="6" height="7" rx="2" fill="#EFE0C2"/>`,
+    sepSvg:`<path d="M20 45 L100 45 L82 85 Q60 95 38 85 Z" fill="#6B5B44" stroke="#8A7454" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M23 46 L97 46 L93 54 L27 54 Z" fill="#7A6950"/>
+      <path d="M42 30 a18 14 0 0 1 36 0 l-6 12 l-8 -8 l-8 9 l-8 -7 Z" fill="#F2E4C4" stroke="#7A5F3C" stroke-width="4" stroke-linejoin="round"/>
+      <circle cx="52" cy="64" r="3.5" fill="#F0E2C8"/><circle cx="68" cy="64" r="3.5" fill="#F0E2C8"/>
+      <path d="M54 72 q6 6 12 0" stroke="#F0E2C8" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M38 96 q4 10 -2 16" stroke="#FFC93C" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M82 96 q-4 10 2 16" stroke="#D8CBAF" stroke-width="6" fill="none" stroke-linecap="round"/>` },
+  { name:'Retro arcade', icon:'🕹️', vars:{
+    'cream':'#0F1326','dot':'#1C2244','cream-2':'#171D38','card':'#131A33',
+    'brown':'#E8F0FF','brown-2':'#93A3D6','tan':'#2C3763','tan-2':'#222B4E',
+    'yolk':'#FFD23F','yolk-dark':'#FFDE66','green':'#5ED454','green-dark':'#7CFF6B','pink':'#FF4FD8' },
+    skins:{
+      farmhand:{icon:'👾', name:'Pixel intern'}, apprentice:{icon:'🕹️', name:'Joystick jockey'},
+      crackbot:{icon:'🎮', name:'Crack-Man cabinet'}, spinsep:{icon:'💿', name:'Sorting laser'},
+      van:{icon:'🛹', name:'Hoverboard courier'}, freight:{icon:'🏎️', name:'Turbo racer'},
+      factory:{icon:'🎰', name:'Jackpot factory'} },
+    eggSvg:`<g shape-rendering="crispEdges">
+      <g fill="#F2EFE9"><rect x="45" y="15" width="30" height="10"/><rect x="35" y="25" width="50" height="10"/>
+        <rect x="25" y="35" width="70" height="50"/><rect x="35" y="85" width="50" height="10"/><rect x="45" y="95" width="30" height="10"/></g>
+      <g fill="#C9C4B8"><rect x="25" y="65" width="10" height="20"/><rect x="35" y="85" width="10" height="10"/><rect x="45" y="95" width="10" height="10"/></g>
+      <g class="cracks" fill="#8A8478"><rect x="50" y="28" width="8" height="8"/><rect x="58" y="36" width="8" height="8"/>
+        <rect x="50" y="44" width="8" height="8"/><rect x="68" y="30" width="8" height="8"/></g>
+      <g fill="#1C2244"><rect x="44" y="54" width="8" height="8"/><rect x="68" y="54" width="8" height="8"/></g>
+      <g fill="#FF4FD8"><rect x="34" y="64" width="8" height="6"/><rect x="78" y="64" width="8" height="6"/></g>
+      <rect x="48" y="72" width="24" height="6" fill="#1C2244"/></g>`,
+    sepSvg:`<g shape-rendering="crispEdges">
+      <rect x="20" y="43" width="80" height="5" fill="#7CFF6B"/>
+      <rect x="20" y="48" width="80" height="10" fill="#2C3763"/><rect x="28" y="58" width="64" height="10" fill="#222B4E"/>
+      <rect x="36" y="68" width="48" height="10" fill="#2C3763"/><rect x="44" y="78" width="32" height="8" fill="#222B4E"/>
+      <g fill="#F2EFE9"><rect x="48" y="22" width="24" height="8"/><rect x="42" y="30" width="36" height="10"/>
+        <rect x="44" y="40" width="8" height="4"/><rect x="58" y="40" width="8" height="4"/><rect x="70" y="40" width="6" height="4"/></g>
+      <g fill="#7CFF6B"><rect x="48" y="60" width="7" height="7"/><rect x="65" y="60" width="7" height="7"/></g>
+      <rect x="52" y="72" width="16" height="4" fill="#7CFF6B"/>
+      <g fill="#FFD23F"><rect x="36" y="90" width="8" height="8"/><rect x="32" y="100" width="8" height="8"/></g>
+      <g fill="#E8F0FF"><rect x="76" y="90" width="8" height="8"/><rect x="80" y="100" width="8" height="8"/></g></g>` },
+  { name:'Deep space station', icon:'🚀', vars:{
+    'cream':'#0A0A16','dot':'#17172E','cream-2':'#14142A','card':'#101020',
+    'brown':'#E4E4F7','brown-2':'#9A9AC6','tan':'#2B2B4E','tan-2':'#20203C',
+    'yolk':'#FFC93C','yolk-dark':'#FFD86B','green':'#5EE6D0','green-dark':'#4FE3FF','pink':'#B084F5' },
+    skins:{
+      farmhand:{icon:'🧑‍🚀', name:'Space cadet'}, apprentice:{icon:'🛸', name:'Sorting drone'},
+      crackbot:{icon:'☄️', name:'Asteroid smasher'}, spinsep:{icon:'🌌', name:'Gravity separator'},
+      van:{icon:'🛰️', name:'Cargo shuttle'}, freight:{icon:'🚀', name:'Freight rocket'},
+      factory:{icon:'🪐', name:'Orbital megaplant'} },
+    eggSvg:`<ellipse cx="60" cy="62" rx="40" ry="50" fill="#23234A" stroke="#4FE3FF" stroke-width="4"/>
+      <circle cx="45" cy="36" r="2" fill="#E4E4F7"/><circle cx="72" cy="44" r="1.5" fill="#B084F5"/>
+      <circle cx="50" cy="92" r="1.5" fill="#4FE3FF"/><circle cx="78" cy="84" r="2" fill="#E4E4F7"/><circle cx="36" cy="66" r="1.5" fill="#E4E4F7"/>
+      <g class="cracks" stroke="#4FE3FF" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M38 34 l9 9 l-7 10 l11 8 l-5 11"/><path d="M82 38 l-8 10 l8 9 l-10 9"/><path d="M60 22 l3 10 l-6 8"/>
+      </g>
+      <circle cx="48" cy="58" r="4.5" fill="#E4E4F7"/><circle cx="72" cy="58" r="4.5" fill="#E4E4F7"/>
+      <ellipse cx="42" cy="70" rx="5" ry="3" fill="#B084F5" opacity=".55"/><ellipse cx="78" cy="70" rx="5" ry="3" fill="#B084F5" opacity=".55"/>
+      <path d="M52 74 q8 8 16 0" stroke="#E4E4F7" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="60" cy="62" rx="53" ry="14" fill="none" stroke="#B084F5" stroke-width="2.5" opacity=".7" transform="rotate(-18 60 62)"/>`,
+    sepSvg:`<line x1="60" y1="22" x2="60" y2="34" stroke="#9A9AC6" stroke-width="3"/><circle cx="60" cy="18" r="4" fill="#4FE3FF"/>
+      <path d="M20 45 L100 45 L82 85 Q60 95 38 85 Z" fill="#2B2B4E" stroke="#4FE3FF" stroke-width="4" stroke-linejoin="round"/>
+      <circle cx="36" cy="51" r="3" fill="#FFD86B"/><circle cx="60" cy="53" r="3" fill="#B084F5"/><circle cx="84" cy="51" r="3" fill="#5EE6D0"/>
+      <circle cx="52" cy="66" r="3.5" fill="#E4E4F7"/><circle cx="68" cy="66" r="3.5" fill="#E4E4F7"/>
+      <path d="M54 73 q6 6 12 0" stroke="#E4E4F7" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M38 96 q4 10 -2 16" stroke="#FFC93C" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M82 96 q-4 10 2 16" stroke="#C8C8E8" stroke-width="6" fill="none" stroke-linecap="round"/>` },
+  { name:'Golden dimension', icon:'👑', vars:{
+    'cream':'#F7ECC5','dot':'#EDDCA0','cream-2':'#FBF3D8','card':'#FFF9E3',
+    'brown':'#5A430A','brown-2':'#8A6C1C','tan':'#D9B95C','tan-2':'#EFDFAC',
+    'yolk':'#FFC93C','yolk-dark':'#C99700','green':'#7BAE4E','green-dark':'#4F7A2B','pink':'#E5A46B' },
+    skins:{
+      farmhand:{icon:'🤴', name:'Royal squire'}, apprentice:{icon:'🧙', name:'Court alchemist'},
+      crackbot:{icon:'⚒️', name:'Gilded hammer'}, spinsep:{icon:'⚗️', name:"Philosopher's sieve"},
+      van:{icon:'🐎', name:'Royal carriage'}, freight:{icon:'🦅', name:'Gryphon courier'},
+      factory:{icon:'🏰', name:'Palace mint'} },
+    eggSvg:`<ellipse cx="60" cy="64" rx="40" ry="48" fill="#FFD54A" stroke="#C99700" stroke-width="5"/>
+      <ellipse cx="46" cy="46" rx="10" ry="16" fill="#FFE9A8" opacity=".8"/>
+      <path d="M38 24 L44 6 L53 15 L60 2 L67 15 L76 6 L82 24 Z" fill="#E8A000" stroke="#7A5A08" stroke-width="3" stroke-linejoin="round"/>
+      <rect x="37" y="20" width="46" height="6" rx="3" fill="#C99700" stroke="#7A5A08" stroke-width="2.5"/>
+      <circle cx="47" cy="15" r="2.2" fill="#C85B4A"/><circle cx="60" cy="12" r="2.5" fill="#4FA3D8"/><circle cx="73" cy="15" r="2.2" fill="#C85B4A"/>
+      <g class="cracks" stroke="#A87E00" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M38 38 l9 9 l-7 10 l11 8 l-5 11"/><path d="M82 42 l-8 10 l8 9 l-10 9"/><path d="M60 26 l3 10 l-6 8"/>
+      </g>
+      <circle cx="48" cy="60" r="4.5" fill="#7A5A08"/><circle cx="72" cy="60" r="4.5" fill="#7A5A08"/>
+      <ellipse cx="42" cy="72" rx="5" ry="3" fill="#E5A46B" opacity=".8"/><ellipse cx="78" cy="72" rx="5" ry="3" fill="#E5A46B" opacity=".8"/>
+      <path d="M52 76 q8 8 16 0" stroke="#7A5A08" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M16 38 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2 l5 -2 Z" fill="#FFE9A8"/>
+      <path d="M104 76 l1.5 4 l4 1.5 l-4 1.5 l-1.5 4 l-1.5 -4 l-4 -1.5 l4 -1.5 Z" fill="#FFE9A8"/>`,
+    sepSvg:`<path d="M20 45 L100 45 L82 85 Q60 95 38 85 Z" fill="#FFD54A" stroke="#C99700" stroke-width="5" stroke-linejoin="round"/>
+      <circle cx="40" cy="52" r="3" fill="#C85B4A"/><circle cx="60" cy="54" r="3" fill="#4FA3D8"/><circle cx="80" cy="52" r="3" fill="#6BAE4E"/>
+      <path d="M42 30 a18 14 0 0 1 36 0 l-6 12 l-8 -8 l-8 9 l-8 -7 Z" fill="#FFD54A" stroke="#C99700" stroke-width="4" stroke-linejoin="round"/>
+      <circle cx="52" cy="66" r="3.5" fill="#7A5A08"/><circle cx="68" cy="66" r="3.5" fill="#7A5A08"/>
+      <path d="M54 73 q6 6 12 0" stroke="#7A5A08" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M38 96 q4 10 -2 16" stroke="#E0A400" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M82 96 q-4 10 2 16" stroke="#FFF3D0" stroke-width="6" fill="none" stroke-linecap="round"/>` }
+];
+const themeIdx = () => (S.level - 1) % THEMES.length;
+
 const PALETTES = [
   { bg:'#FDF6E3', dot:'#F3EAD2' },
   { bg:'#EDF6E6', dot:'#DCEDD0' },
@@ -378,6 +512,8 @@ const PALETTES = [
 ];
 
 const $ = id => document.getElementById(id);
+const DEFAULT_EGG_SVG = document.getElementById('eggArt').innerHTML;
+const DEFAULT_SEP_SVG = document.getElementById('sepArt').innerHTML;
 
 function fmt(n){
   if (n >= 9.995e11) return (n/1e12).toFixed(2)+'T';
@@ -396,7 +532,8 @@ const prestigeMult  = () => 1 + 0.25 * S.nestEggs;
 const milestonesReached = () => MILESTONES.filter(t => S.totalEggs >= t).length;
 const milestoneMult = () => Math.pow(1.05, milestonesReached());
 const frenzyMult    = () => Date.now() < frenzyUntil ? 3 : 1;
-const priceMult     = () => prestigeMult() * milestoneMult() * frenzyMult();
+const levelMult     = () => Math.pow(1.5, S.level - 1);
+const priceMult     = () => prestigeMult() * milestoneMult() * frenzyMult() * levelMult();
 const yolkPrice     = () => 1.5 * Math.pow(1.4, S.lvl.yolkPrice) * priceMult();
 const whitePrice    = () => 1.0 * Math.pow(1.4, S.lvl.whitePrice) * priceMult();
 const yolkRate      = () => 1 * Math.pow(2, S.lvl.yolkPump);
@@ -529,8 +666,22 @@ function buildShop(){
     S.money = 0; S.cracked = 0; S.yolk = 0; S.white = 0; S.runEarned = 0;
     Object.keys(S.lvl).forEach(k => S.lvl[k] = 0);
     Object.keys(S.owned).forEach(k => S.owned[k] = 0);
-    applyPalette(); save(); render();
+    applyTheme(); save(); render();
     toast('🪺 Farm sold! +' + g + ' nest egg' + (g > 1 ? 's' : '') + ' — all prices now +' + Math.round((prestigeMult() - 1) * 100) + '% forever.', 7000);
+  });
+
+  $('levelBtn').addEventListener('click', () => {
+    if (S.prestiges < LEVEL_REQ) return;
+    const nt = THEMES[S.level % THEMES.length];
+    if (!confirm('Hatch into ' + nt.name + '? EVERYTHING resets — money, upgrades, nest eggs, milestones — but you keep a permanent ×1.5 price boost per level.')) return;
+    S.level++;
+    S.money = 0; S.cracked = 0; S.yolk = 0; S.white = 0;
+    S.runEarned = 0; S.totalEggs = 0; S.nestEggs = 0; S.prestiges = 0;
+    Object.keys(S.lvl).forEach(k => S.lvl[k] = 0);
+    Object.keys(S.owned).forEach(k => S.owned[k] = 0);
+    lastMilestoneCount = 0;
+    applyTheme(); save(); render();
+    toast(nt.icon + ' Welcome to the ' + nt.name + ' (Level ' + S.level + ')! A fresh empire awaits — all prices ×' + fmt(levelMult()) + '.', 8000);
   });
 
   $('shopHeader').addEventListener('click', () => {
@@ -546,7 +697,8 @@ function buildShop(){
 let incomeWindow = [];
 function render(){
   $('money').textContent = '$' + fmt(Math.floor(S.money));
-  $('lifetime').textContent = 'eggs processed: ' + fmt(S.totalEggs) + (S.nestEggs > 0 ? ' · 🪺 ' + S.nestEggs : '');
+  $('lifetime').textContent = (S.level > 1 ? THEMES[themeIdx()].icon + ' Lv' + S.level + ' · ' : '')
+    + 'eggs processed: ' + fmt(S.totalEggs) + (S.nestEggs > 0 ? ' · 🪺 ' + S.nestEggs : '');
   $('queue').textContent = fmt(S.cracked) + ' cracked';
   $('crackSub').textContent = fmt(crackPerClick()) + (crackPerClick() === 1 ? ' egg' : ' eggs') + ' per click';
   $('sepSub').textContent = fmt(sepPerClick()) + (sepPerClick() === 1 ? ' egg' : ' eggs') + ' per click';
@@ -588,20 +740,46 @@ function render(){
     ? 'Selling now earns +' + g + ' nest egg' + (g > 1 ? 's' : '') + '. Keep earning this run for a bigger payout.'
     : 'Earn ' + fmtMoney(150000) + ' in one run to sell the farm. This run: ' + fmtMoney(S.runEarned) + '.';
 
+  const nextTheme = THEMES[S.level % THEMES.length];
+  $('levelBtn').classList.toggle('locked', S.prestiges < LEVEL_REQ);
+  $('levelOwned').textContent = 'Lv' + S.level;
+  $('levelGain').textContent = S.prestiges >= LEVEL_REQ ? '→ Lv' + (S.level + 1) : '';
+  $('levelDesc').textContent = 'Next: ' + nextTheme.icon + ' ' + nextTheme.name + ' — full reset, permanent ×1.5 prices per level';
+  $('levelNote').textContent = S.prestiges >= LEVEL_REQ
+    ? 'Ready to hatch! A whole new world awaits.'
+    : 'Sell the farm ' + LEVEL_REQ + ' times to hatch a new world. This level: ' + S.prestiges + '/' + LEVEL_REQ + '.';
+
   const affordable = document.querySelectorAll('#shopBody .item:not(.locked)').length;
   const badge = $('affordBadge');
   if (affordable > 0){ badge.style.display = 'inline-block'; badge.textContent = affordable; }
   else badge.style.display = 'none';
 }
 
-function applyPalette(){
-  const p = PALETTES[S.prestiges % PALETTES.length];
-  document.documentElement.style.setProperty('--cream', p.bg);
-  document.documentElement.style.setProperty('--dot', p.dot);
+function applyTheme(){
+  const t = THEMES[themeIdx()];
+  const vars = { ...DEFAULT_VARS, ...t.vars };
+  Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty('--' + k, v));
+  if (themeIdx() === 0){
+    const p = PALETTES[S.prestiges % PALETTES.length];
+    document.documentElement.style.setProperty('--cream', p.bg);
+    document.documentElement.style.setProperty('--dot', p.dot);
+  }
+  document.querySelector('meta[name=theme-color]').content = vars['cream'];
+  $('eggArt').innerHTML = t.eggSvg || DEFAULT_EGG_SVG;
+  $('sepArt').innerHTML = t.sepSvg || DEFAULT_SEP_SVG;
+  const skins = t.skins || {};
+  HIRES.forEach(h => {
+    const b = $('hire_' + h.id);
+    if (!b) return;
+    const s = skins[h.id] || h;
+    b.querySelector('.icon').textContent = s.icon;
+    b.querySelector('.name').firstChild.textContent = s.name + ' ';
+  });
   const mark = $('prestigeMark');
-  if (S.nestEggs > 0){
+  if (S.level > 1 || S.nestEggs > 0){
     mark.style.display = 'block';
-    $('prestigeLvl').textContent = '×' + S.nestEggs;
+    mark.innerHTML = (S.level > 1 ? t.icon + '<span> Lv' + S.level + '</span><br>' : '')
+      + (S.nestEggs > 0 ? '🪺<span>×' + S.nestEggs + '</span>' : '');
   } else mark.style.display = 'none';
 }
 
@@ -779,7 +957,7 @@ $('resetBtn').addEventListener('click', () => {
 
 load();
 buildShop();
-applyPalette();
+applyTheme();
 render();
 setInterval(save, 5000);
 document.addEventListener('visibilitychange', () => {

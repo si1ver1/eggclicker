@@ -27,6 +27,14 @@ The shop has three sections:
 | **Product lines** | Per-component boosts. Golden yolks / Cloud whites raise the sale price ×1.5 per level; the Yolk and Whites pumps double how fast each tank sells; the Bigger vat upgrades double a tank's capacity. |
 | **Sell the farm** | Prestige. Once you've earned $150k in a run, sell the farm for **nest eggs** (more earnings = more nest eggs, on a square-root curve). Each nest egg permanently boosts all sale prices by +25%. Selling resets money, crew, and upgrades — nest eggs and lifetime stats persist, the background palette shifts, and your nest-egg count is watermarked behind the play area. |
 
+### Levels — hatch a new world
+
+Selling the farm 5 times unlocks **Level up** (bottom of the shop). Leveling resets *everything* — money, upgrades, nest eggs, milestones — like starting a new game, but you keep a permanent ×1.5 price multiplier per level and the whole game re-themes:
+
+1. 🌾 Cozy farm → 2. 🍄 Underground hencave → 3. 🕹️ Retro arcade → 4. 🚀 Deep space station → 5. 👑 Golden dimension → (cycle repeats)
+
+Your current level shows in the header and as a watermark behind the play area. Each world redraws the click stations — a speckled cave egg and stone bowl underground, a chunky pixel egg and neon bowl in the arcade, a starry cosmic egg with an orbit ring and a UFO bowl in space, and a crowned golden egg with a gem-studded chalice in the golden dimension. Each world also reskins the whole crew — e.g. the hencave replaces the Freight truck with an 🚜 Excavator and the Farmhand with a ⛏️ Mole miner; space runs on 🧑‍🚀 cadets and 🚀 freight rockets. Same stats and prices, new flavor. The prestige requirement is the `LEVEL_REQ` constant; themes and their crew skins live in the `THEMES` array.
+
 ### Events & milestones
 
 - **Golden eggs** appear at a random spot every few minutes (first one within ~90 seconds) and last 12 seconds. Clicking one gives either an instant cash windfall or a **frenzy** — all prices ×3 for 20 seconds.
