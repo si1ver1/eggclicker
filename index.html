@@ -338,8 +338,8 @@ const SAVE_KEY = 'eggEmpireSave_v1';
 let S = {
   money: 0, cracked: 0, yolk: 0, white: 0,
   totalEggs: 0, runEarned: 0, nestEggs: 0, prestiges: 0,
-  lvl: { crackPower:0, sepPower:0, yolkPrice:0, whitePrice:0, yolkPump:0, whitePump:0, yolkCap:0, whiteCap:0 },
-  owned: { farmhand:0, apprentice:0, crackbot:0, spinsep:0, factory:0 },
+  lvl: { crackPower:0, sepPower:0, yolkPrice:0, whitePrice:0, yolkPump:0, whitePump:0, yolkCap:0, whiteCap:0, yolkValve:0, whiteValve:0 },
+  owned: { farmhand:0, apprentice:0, crackbot:0, spinsep:0, van:0, freight:0, factory:0 },
   lastSeen: Date.now()
 };
 
@@ -348,6 +348,8 @@ const HIRES = [
   { id:'apprentice', icon:'👩‍🍳', name:'Kitchen apprentice', desc:'Separates 0.3 eggs/sec',           base:75,     mult:1.18, crack:0,   sep:0.3 },
   { id:'crackbot',   icon:'🤖', name:'Crack-o-Matic',      desc:'Cracks 2.5 eggs/sec',              base:1500,   mult:1.18, crack:2.5, sep:0   },
   { id:'spinsep',    icon:'🌀', name:'Spin separator',     desc:'Separates 2.5 eggs/sec',           base:2250,   mult:1.18, crack:0,   sep:2.5 },
+  { id:'van',        icon:'🚚', name:'Delivery van',       desc:'Sells 0.5/sec from both tanks',    base:800,    mult:1.18, crack:0,   sep:0,   sell:0.5 },
+  { id:'freight',    icon:'🚛', name:'Freight truck',      desc:'Sells 3/sec from both tanks',      base:9000,   mult:1.18, crack:0,   sep:0,   sell:3   },
   { id:'factory',    icon:'🏭', name:'Egg factory',        desc:'Cracks & separates 12 eggs/sec',   base:40000,  mult:1.22, crack:12,  sep:12  }
 ];
 
@@ -359,7 +361,9 @@ const UPGRADES = [
   { id:'yolkPump',   icon:'🚰', name:'Yolk pump',       desc:'Yolk sell speed ×2',            base:200, mult:3,   list:'productList' },
   { id:'whitePump',  icon:'💨', name:'Whites pump',     desc:'Whites sell speed ×2',          base:200, mult:3,   list:'productList' },
   { id:'yolkCap',    icon:'🛢️', name:'Bigger yolk vat', desc:'Yolk tank capacity ×2',         base:300, mult:2.4, list:'productList' },
-  { id:'whiteCap',   icon:'🪣', name:'Bigger whites vat', desc:'Whites tank capacity ×2',     base:300, mult:2.4, list:'productList' }
+  { id:'whiteCap',   icon:'🪣', name:'Bigger whites vat', desc:'Whites tank capacity ×2',     base:300, mult:2.4, list:'productList' },
+  { id:'yolkValve',  icon:'🔁', name:'Yolk overflow valve',   desc:'Full tank no longer stalls — overflow sells at 50% price', base:1500, mult:1, max:1, list:'productList' },
+  { id:'whiteValve', icon:'🔁', name:'Whites overflow valve', desc:'Full tank no longer stalls — overflow sells at 50% price', base:1500, mult:1, max:1, list:'productList' }
 ];
 
 const MILESTONES = [250, 1000, 5000, 20000, 100000, 500000, 2500000];
@@ -401,9 +405,13 @@ const yolkCap       = () => 150 * Math.pow(2, S.lvl.yolkCap);
 const whiteCap      = () => 150 * Math.pow(2, S.lvl.whiteCap);
 const yolkPressure  = () => S.yolk >= yolkCap() * 0.9;
 const whitePressure = () => S.white >= whiteCap() * 0.9;
-const yolkSellRate  = () => yolkRate() * (yolkPressure() ? 2 : 1);
-const whiteSellRate = () => whiteRate() * (whitePressure() ? 2 : 1);
-const tankSpace     = () => Math.max(0, Math.min(yolkCap() - S.yolk, whiteCap() - S.white));
+function autoSellRate(){ return HIRES.reduce((s,h)=> s + (h.sell || 0) * S.owned[h.id], 0); }
+const yolkSellRate  = () => (yolkRate() + autoSellRate()) * (yolkPressure() ? 2 : 1);
+const whiteSellRate = () => (whiteRate() + autoSellRate()) * (whitePressure() ? 2 : 1);
+const tankSpace     = () => Math.max(0, Math.min(
+  S.lvl.yolkValve  ? Infinity : yolkCap()  - S.yolk,
+  S.lvl.whiteValve ? Infinity : whiteCap() - S.white
+));
 const prestigeGain  = () => Math.floor(Math.sqrt(S.runEarned / 150000));
 function autoCrack(){ return HIRES.reduce((s,h)=> s + h.crack*S.owned[h.id], 0); }
 function autoSep(){   return HIRES.reduce((s,h)=> s + h.sep*S.owned[h.id],   0); }
@@ -504,6 +512,7 @@ function buildShop(){
       <span class="info"><span class="name">${u.name} <span class="owned"></span></span>
       <span class="desc">${u.desc}</span></span><span class="cost"></span>`;
     b.addEventListener('click', () => {
+      if (u.max && S.lvl[u.id] >= u.max) return;
       const c = upgCost(u);
       if (S.money < c) return;
       S.money -= c; S.lvl[u.id]++; render();
@@ -562,9 +571,10 @@ function render(){
   });
   UPGRADES.forEach(u => {
     const b = $('upg_' + u.id), c = upgCost(u);
-    b.querySelector('.cost').textContent = fmtMoney(c);
-    b.querySelector('.owned').textContent = S.lvl[u.id] > 0 ? 'lv' + S.lvl[u.id] : '';
-    b.classList.toggle('locked', S.money < c);
+    const maxed = u.max && S.lvl[u.id] >= u.max;
+    b.querySelector('.cost').textContent = maxed ? '✓' : fmtMoney(c);
+    b.querySelector('.owned').textContent = maxed ? 'installed' : (S.lvl[u.id] > 0 ? 'lv' + S.lvl[u.id] : '');
+    b.classList.toggle('locked', maxed || S.money < c);
   });
 
   const g = prestigeGain();
@@ -657,6 +667,14 @@ function tick(now){
   }
 
   let earned = 0;
+  if (S.lvl.yolkValve && S.yolk > yolkCap()){
+    const ov = S.yolk - yolkCap();
+    S.yolk = yolkCap(); earned += ov * yolkPrice() * 0.5;
+  }
+  if (S.lvl.whiteValve && S.white > whiteCap()){
+    const ov = S.white - whiteCap();
+    S.white = whiteCap(); earned += ov * whitePrice() * 0.5;
+  }
   const sy = Math.min(S.yolk, yolkSellRate() * dt);
   S.yolk -= sy; earned += sy * yolkPrice();
   const sw = Math.min(S.white, whiteSellRate() * dt);
@@ -703,23 +721,27 @@ function creditAway(){
   if (away <= 30) return;
   S.lastSeen = Date.now();
   const eff = 0.5;
-  const ySellMax = yolkRate() * away * eff, wSellMax = whiteRate() * away * eff;
+  const ySellMax = (yolkRate() + autoSellRate()) * away * eff;
+  const wSellMax = (whiteRate() + autoSellRate()) * away * eff;
   const crackedMade = autoCrack() * away * eff;
   const crackedAvail = S.cracked + crackedMade;
   const processed = Math.min(
     crackedAvail,
     autoSep() * away * eff,
-    Math.max(0, yolkCap() - S.yolk) + ySellMax,
-    Math.max(0, whiteCap() - S.white) + wSellMax
+    S.lvl.yolkValve  ? Infinity : Math.max(0, yolkCap()  - S.yolk)  + ySellMax,
+    S.lvl.whiteValve ? Infinity : Math.max(0, whiteCap() - S.white) + wSellMax
   );
   S.cracked = crackedAvail - processed;
   const yAvail = S.yolk + processed, wAvail = S.white + processed;
   const ySold = Math.min(yAvail, ySellMax);
   const wSold = Math.min(wAvail, wSellMax);
-  S.yolk = Math.min(yAvail - ySold, yolkCap());
-  S.white = Math.min(wAvail - wSold, whiteCap());
+  let gained = ySold * yolkPrice() + wSold * whitePrice();
+  const yLeft = yAvail - ySold, wLeft = wAvail - wSold;
+  if (S.lvl.yolkValve && yLeft > yolkCap())  gained += (yLeft - yolkCap())  * yolkPrice()  * 0.5;
+  if (S.lvl.whiteValve && wLeft > whiteCap()) gained += (wLeft - whiteCap()) * whitePrice() * 0.5;
+  S.yolk = Math.min(yLeft, yolkCap());
+  S.white = Math.min(wLeft, whiteCap());
   S.totalEggs += processed;
-  const gained = ySold * yolkPrice() + wSold * whitePrice();
   if (gained >= 1){
     S.money += gained;
     S.runEarned += gained;

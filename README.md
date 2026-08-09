@@ -36,6 +36,8 @@ The shop has three sections:
 
 - Each tank holds a limited amount (base 150). When either tank is full, the separator stalls and cracked eggs pile up in the queue — buy Bigger vats and pumps to keep the line moving.
 - **Pressure bonus**: a tank that's over 90% full sells at ×2 speed (shown as ⚡ in the tank meta). Riding near the limit is rewarded, not just punished.
+- **Delivery trucks** (Hands & hardware): vans and freight trucks add flat sell speed to *both* tanks on top of the pumps — a second way to scale throughput.
+- **Overflow valves** (one-time, per tank): once installed, a full tank never stalls the separator — overflow sells instantly at 50% price. The line keeps moving; you just pay an efficiency tax, softened by the pressure bonus running constantly at full.
 
 Tip: automation is only as fast as its slowest stage — a fleet of farmhands with nobody separating just piles up cracked eggs, and a full tank stalls everything upstream.
 
